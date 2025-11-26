@@ -1,7 +1,8 @@
 import React, { useEffect } from "react";
-import Header from "./components/header"; // Pastikan nama file adalah Header.jsx
+import Header from "./components/header"; 
 import LandingPage from "./sections/landingpage";
-import AboutUsSection from "./sections/aboutUs"; // Mengganti 'aboutUs' menjadi 'AboutUsSection' agar konsisten
+import AboutUsSection from "./sections/aboutUs"; 
+import ReviewSection from "./sections/review";
 import Footer from "./components/footer";
 
 // Import AOS dan CSS-nya
@@ -20,20 +21,12 @@ function App() {
   }, []);
 
   return (
-    // Memastikan overflow-x-hidden untuk mencegah scroll horizontal karena AOS
     <div className="bg-white min-h-screen text-gray-900 overflow-x-hidden">
-      {/* 1. HEADER (Fixed Navigation) */}
       <Header />
-
-      {/* 2. KONTEN UTAMA - Konten di bawah header fixed */}
       <main>
-        {/* SECTION 1: HERO/LANDING PAGE (Sudah termasuk pt-20) */}
         <LandingPage />
-
-        {/* SECTION 2: ABOUT US (Bagian dari Halaman Home) */}
         <AboutUsSection />
-
-        {/* Section Home lainnya akan ditambahkan di sini */}
+        <ReviewSection />
       </main>
       {/* Footer (Fixed Navigation) */}
       <Footer />
