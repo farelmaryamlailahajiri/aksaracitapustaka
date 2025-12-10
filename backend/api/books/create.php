@@ -4,6 +4,7 @@
 header('Content-Type: application/json');
 require '../../config/database.php';
 require '../../includes/functions.php';
+require '../../middleware/auth.php'; // Otentikasi Admin
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);

@@ -1,4 +1,5 @@
 <?php
+// api/books/get.php
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -13,19 +14,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-// Jalur Require disesuaikan (naik 2 tingkat dari api/books/)
 require '../../config/database.php';
-
-// Asumsi: Endpoint ini HANYA untuk Admin, jadi middleware otentikasi diperlukan.
-// Jika file ini diaktifkan, pastikan file auth.php berada di backend/middleware/
-require '../../middleware/auth.php'; 
+require '../../middleware/auth.php'; // Otentikasi Admin
 
 try {
     $id = $_GET['id'] ?? null;
     $response_data = [];
 
-    if ($id) {
-        // Ambil satu buku
+    if ($id && is_numeric($id)) {
+        // Ambil satu buku (digunakan oleh EditBook.jsx)
         $stmt = $pdo->prepare("SELECT * FROM books WHERE id = ?");
         $stmt->execute([$id]);
         $book = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -39,16 +36,20 @@ try {
             exit;
         }
         
-    } else {
-        // Ambil semua buku
+    } elseif (!$id) {
+        // Ambil semua buku (jika tidak ada ID)
         $stmt = $pdo->query("SELECT * FROM books ORDER BY created_at DESC");
         $books = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // Mengembalikan array data
         $response_data = $books ?: [];
+    } else {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'ID buku tidak valid.']);
+        exit;
     }
     
-    // Kembalikan respons sukses dalam format objek standar API
+    // Kembalikan respons sukses, mengemas data di field 'data'
     echo json_encode([
         'success' => true,
         'data' => $response_data

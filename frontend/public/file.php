@@ -2,7 +2,7 @@
 $type = $_GET['t'] ?? '';
 $file = $_GET['f'] ?? '';
 
-$allowed = ['covers', 'previews'];
+$allowed = ['covers', 'previews', 'articles'];
 if (!in_array($type, $allowed) || empty($file) || strpos($file, '..') !== false) {
     http_response_code(403);
     die('Access denied');

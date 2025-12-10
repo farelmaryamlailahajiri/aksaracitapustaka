@@ -1,20 +1,66 @@
 <?php
-header('Content-Type: application/json');
-require '../../includes/auth.php';
-require '../../includes/functions.php';
-require '../middleware/auth.php';
-require_login();
+// api/articles/delete.php
 
-if (isset($_POST['id'])) {
+header('Content-Type: application/json; charset=utf-8');
+
+// Header CORS
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: X-Auth-Token, Content-Type');
+
+// Handle Preflight Request
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
+// 🔥 PASTIKAN JALUR INI BENAR SESUAI STRUKTUR FOLDER ANDA
+require '../../config/database.php'; // Koneksi PDO
+require '../../includes/functions.php'; // Berisi fungsi delete_file()
+require '../../middleware/auth.php'; // Otentikasi Admin
+
+// Ambil data JSON dari body
+$data = json_decode(file_get_contents('php://input'), true);
+$id = $data['id'] ?? null;
+
+if (!$id || !is_numeric($id)) {
+    http_response_code(400); // Bad Request
+    echo json_encode(['success' => false, 'message' => 'ID artikel tidak valid.']);
+    exit;
+}
+
+try {
+    // 1. Ambil nama file sebelum menghapus entri DB
     $stmt = $pdo->prepare("SELECT foto_buku FROM articles WHERE id = ?");
-    $stmt->execute([$_POST['id']]);
-    $article = $stmt->fetch();
-    
-    delete_file($article['foto_buku']);
+    $stmt->execute([$id]);
+    $article = $stmt->fetch(PDO::FETCH_ASSOC); // Gunakan FETCH_ASSOC untuk konsistensi
 
+    if (!$article) {
+        http_response_code(404); // Not Found
+        echo json_encode(['success' => false, 'message' => 'Artikel tidak ditemukan.']);
+        exit;
+    }
+
+    // 2. Hapus file fisik jika ada
+    if ($article['foto_buku']) {
+        delete_file($article['foto_buku'], 'articles'); 
+    }
+
+    // 3. Hapus entri dari database
     $stmt = $pdo->prepare("DELETE FROM articles WHERE id = ?");
-    $success = $stmt->execute([$_POST['id']]);
+    $success = $stmt->execute([$id]);
 
-    echo json_encode(['success' => $success]);
+    if ($success) {
+        http_response_code(200); // OK
+        echo json_encode(['success' => true, 'message' => 'Artikel berhasil dihapus.']);
+    } else {
+        http_response_code(500); // Internal Server Error
+        echo json_encode(['success' => false, 'message' => 'Gagal menghapus dari database.']);
+    }
+    
+} catch (Exception $e) {
+    http_response_code(500); // Internal Server Error
+    error_log("Delete Article Error: " . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'Terjadi kesalahan server: ' . $e->getMessage()]);
 }
 ?>
