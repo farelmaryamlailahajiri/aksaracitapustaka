@@ -1,23 +1,21 @@
 <?php
 // backend/api/articles/update.php
-// LOGIKA 100% SAMA DENGAN books/update.php (yang sudah aman)
+// Endpoint update artikel (hanya admin)
 
 header('Content-Type: application/json; charset=utf-8');
 
-// CORS Headers
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: X-Auth-Token, Content-Type');
 
-// Handle Preflight
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
 
 require '../../config/database.php';
-require '../../includes/functions.php';
-require '../../middleware/auth.php';   // otentikasi admin (wajib!)
+require '../../includes/functions.php';     // upload_file(), delete_file()
+require '../../middleware/auth.php';        // otentikasi admin
 
 // Validasi ID
 $id = $_POST['id'] ?? null;
@@ -27,93 +25,133 @@ if (!$id || !is_numeric($id)) {
     exit;
 }
 
-try {
-    // 1. Ambil data artikel lama (khususnya foto)
-    $stmt = $pdo->prepare("SELECT foto_buku FROM articles WHERE id = ?");
-    $stmt->execute([$id]);
-    $article = $stmt->fetch(PDO::FETCH_ASSOC);
+// Fungsi generate slug unik (sama seperti di create.php)
+function generateUniqueSlug($pdo, $title, $currentId = null) {
+    $slug = strtolower($title);
+    $slug = preg_replace('/[^a-z0-9-]+/', '-', $slug);
+    $slug = trim($slug, '-');
+    $slug = $slug ?: 'artikel';
 
-    if (!$article) {
+    $stmt = $pdo->prepare("SELECT id FROM articles WHERE slug = ? " . ($currentId ? "AND id != ?" : ""));
+    $params = [$slug];
+    if ($currentId) $params[] = $currentId;
+
+    $stmt->execute($params);
+
+    if ($stmt->rowCount() === 0) {
+        return $slug;
+    }
+
+    $counter = 1;
+    while (true) {
+        $newSlug = $slug . '-' . $counter;
+        $params[0] = $newSlug;
+        $stmt->execute($params);
+        if ($stmt->rowCount() === 0) {
+            return $newSlug;
+        }
+        $counter++;
+    }
+}
+
+try {
+    // 1. Ambil data artikel lama (untuk foto & slug lama)
+    $stmt = $pdo->prepare("SELECT foto_artikel, slug FROM articles WHERE id = ?");
+    $stmt->execute([$id]);
+    $oldArticle = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$oldArticle) {
         http_response_code(404);
         echo json_encode(['success' => false, 'message' => 'Artikel tidak ditemukan']);
         exit;
     }
 
-    // Default: pakai foto lama
-    $foto_buku = $article['foto_buku'];
+    $oldFoto = $oldArticle['foto_artikel'];
+    $currentFoto = $oldFoto; // default pakai foto lama
 
-    // 2. === UPLOAD GAMBAR BARU (jika ada) ===
-    if (isset($_FILES['foto_buku']) && $_FILES['foto_buku']['error'] === UPLOAD_ERR_OK) {
+    // 2. === HANDLE UPLOAD FOTO BARU ===
+    if (isset($_FILES['foto_artikel']) && $_FILES['foto_artikel']['error'] === UPLOAD_ERR_OK) {
         // Hapus foto lama jika ada
-        if ($foto_buku) {
-            delete_file($foto_buku, 'articles');
+        if ($currentFoto) {
+            delete_file($currentFoto, 'articles');
         }
 
-        $new_image = upload_file($_FILES['foto_buku'], 'articles', ['jpg', 'jpeg', 'png', 'webp', 'gif']);
-        if ($new_image === false) {
+        $newImage = upload_file($_FILES['foto_artikel'], 'articles', ['jpg', 'jpeg', 'png', 'webp', 'gif']);
+        if ($newImage === false) {
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Gambar: Ekstensi tidak diizinkan']);
             exit;
         }
-        if ($new_image === null) {
+        if ($newImage === null) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Gambar: Gagal mengunggah file']);
+            echo json_encode(['success' => false, 'message' => 'Gambar: Gagal upload']);
             exit;
         }
-        $foto_buku = $new_image;
-
+        $currentFoto = $newImage;
     }
-    // Jika tidak ada file baru, gunakan nama file lama yang dikirim dari frontend
-    elseif (!empty($_POST['foto_buku_lama'])) {
-        $foto_buku = $_POST['foto_buku_lama'];
-    } 
-    // Jika user sengaja menghapus gambar (kosongin input file + tidak kirim foto_buku_lama)
-    else {
-        // Hapus file lama dari server
-        if ($foto_buku) {
-            delete_file($foto_buku, 'articles');
+    // Jika user hapus gambar (kirim input kosong + tidak kirim foto_artikel_lama)
+    elseif (isset($_POST['hapus_foto']) && $_POST['hapus_foto'] === '1') {
+        if ($currentFoto) {
+            delete_file($currentFoto, 'articles');
         }
-        $foto_buku = null;
+        $currentFoto = null;
+    }
+    // Jika tidak ada perubahan foto, pakai yang lama
+    elseif (!empty($_POST['foto_artikel_lama'])) {
+        $currentFoto = $_POST['foto_artikel_lama'];
     }
 
-    // 3. === UPDATE KE DATABASE ===
+    // 3. === AMBIL DATA FORM ===
+    $judul       = trim($_POST['judul'] ?? '');
+    $isi_artikel = $_POST['isi_artikel'] ?? null; // boleh kosong
+
+    if (empty($judul)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Judul artikel wajib diisi']);
+        exit;
+    }
+
+    // 4. === HANDLE SLUG ===
+    // Regenerate slug jika judul berubah, tapi tetap unik
+    $newSlug = generateUniqueSlug($pdo, $judul, $id);
+
+    // 5. === UPDATE DATABASE ===
     $sql = "UPDATE articles SET 
-                nama_buku     = ?,
-                nama_penulis  = ?,
-                isi_articles  = ?,
-                foto_buku     = ?
+                judul         = ?,
+                slug          = ?,
+                isi_artikel   = ?,
+                foto_artikel  = ?,
+                updated_at    = NOW()
             WHERE id = ?";
 
     $stmt = $pdo->prepare($sql);
 
     $success = $stmt->execute([
-        $_POST['nama_buku']     ?? '',
-        $_POST['nama_penulis']  ?? '',
-        $_POST['isi_articles']  ?? null,   // boleh kosong → null
-        $foto_buku,
+        $judul,
+        $newSlug,
+        $isi_artikel,
+        $currentFoto,
         $id
     ]);
 
     if ($success) {
         echo json_encode([
             'success' => true,
-            'message' => 'Artikel berhasil diperbarui'
+            'message' => 'Artikel berhasil diperbarui',
+            'slug'    => $newSlug,
+            'url'     => '/article/' . $newSlug
         ]);
     } else {
         http_response_code(500);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Gagal menyimpan ke database'
-        ]);
+        echo json_encode(['success' => false, 'message' => 'Gagal update database']);
     }
 
 } catch (Exception $e) {
-    http_response_code(500);
     error_log("Update Article Error: " . $e->getMessage());
+    http_response_code(500);
     echo json_encode([
         'success' => false,
         'message' => 'Server error saat update artikel'
-
     ]);
 }
 ?>

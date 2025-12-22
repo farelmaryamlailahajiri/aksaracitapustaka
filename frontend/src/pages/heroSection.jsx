@@ -1,8 +1,7 @@
-// src/components/HeroSection.jsx
-
 import React, { useEffect, useState } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
+import { ArrowRight, ChevronRight } from "lucide-react";
 
 const HeroSection = () => {
   const [bookImages] = useState(() =>
@@ -18,132 +17,131 @@ const HeroSection = () => {
 
   const primaryColor = "#3d2269";
   const goldColor = "#d3a847";
-  const lightPurple = "rgba(230, 204, 255, 0.6)";
 
   return (
     <>
-      {/* HERO — GRADIENT UNGU HANYA DI BELAKANG JUDUL */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center text-center bg-white pt-32 pb-24 px-6 overflow-hidden">
+      {/* HERO SECTION */}
+      <section className="relative min-h-screen flex flex-col justify-center bg-gradient-to-br from-white via-purple-50 to-indigo-50 pt-32 pb-20 px-6 overflow-hidden">
         
-        {/* GRADIENT UNGU — DIPOSISIKAN TEPAT DI TENGAH JUDUL */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none -z-10">
-          <div
-            className="w-[600px] h-[600px] md:w-[900px] md:h-[900px] rounded-full blur-3xl opacity-60"
-            style={{
-              background: `radial-gradient(circle, ${lightPurple} 0%, transparent 65%)`,
-            }}
-          />
-        </div>
+        {/* BACKGROUND BLUR */}
+        <div className="absolute top-0 left-0 w-72 h-72 bg-purple-200 rounded-full blur-3xl opacity-20 -translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-pink-200 rounded-full blur-3xl opacity-20 translate-x-1/3 translate-y-1/3" />
 
-        <div className="relative z-10 max-w-5xl mx-auto">
-          {/* JUDUL 2 BARIS */}
-          <h1
-            className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-8 leading-tight"
-            style={{ color: primaryColor }}
-            data-aos="fade-up"
-          >
-            Bersama Aksara,
-            <br />
-            <span className="block mt-2 text-4xl md:text-5xl lg:text-6xl">
-              Ciptakan Karya Anda!
-            </span>
-          </h1>
+        <div className="relative z-10 max-w-6xl mx-auto grid md:grid-cols-2 gap-16 items-center">
+          
+          {/* LEFT TEXT */}
+          <div className="text-left" data-aos="fade-right">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight text-gray-900">
+              <span style={{ color: primaryColor }}>Bersama Aksara,</span>
+              <br />
+              <span style={{ color: primaryColor }}>Ciptakan Karya Anda!</span>
+            </h1>
 
-          <p
-            className="text-lg md:text-2xl text-gray-700 mb-12 max-w-3xl mx-auto italic leading-relaxed"
-            data-aos="fade-up"
-            data-aos-delay="200"
-          >
-            Jelajahi koleksi buku kami yang menarik dan wujudkan kisahmu menjadi nyata
-            dengan layanan penerbitan profesional dari kami
-          </p>
+            <p className="text-lg md:text-xl mb-10 leading-relaxed text-gray-600">
+              Jelajahi koleksi buku kami dan wujudkan kisah Anda menjadi nyata
+              bersama penerbit yang tumbuh dari visi dan dedikasi.
+            </p>
 
-          <div className="flex flex-col sm:flex-row gap-8 justify-center items-center" data-aos="fade-up" data-aos-delay="400">
-            <a
-              href="https://wa.me/6285183220443"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-12 py-6 rounded-full text-white font-bold uppercase tracking-wider text-lg shadow-2xl transform hover:scale-105 transition duration-300"
-              style={{
-                backgroundColor: goldColor,
-                boxShadow: "0 15px 35px rgba(211,168,71,0.4), inset 0 -6px 0 rgba(0,0,0,0.2)",
-              }}
-            >
-              Publish Your Book Today
-            </a>
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+              <a
+                href="https://wa.me/6285183220443"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-bold text-white shadow-lg transition-all hover:shadow-xl"
+                style={{ backgroundColor: goldColor }}
+              >
+                Mulai Penerbitan
+                <ArrowRight className="w-5 h-5" />
+              </a>
 
-            <a
-              href="/service"
-              className="px-12 py-6 rounded-full font-bold uppercase tracking-wider text-lg border-4 transform hover:scale-105 transition duration-300"
-              style={{
-                color: primaryColor,
-                borderColor: primaryColor,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "#2a1648";
-                e.currentTarget.style.borderColor = "#2a1648";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = primaryColor;
-                e.currentTarget.style.borderColor = primaryColor;
-              }}
-            >
-              See Our Service
-            </a>
+              <a
+                href="/service"
+                className="inline-flex items-center gap-2 px-6 py-4 font-semibold text-gray-700 hover:text-gray-900 transition"
+              >
+                <div className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center">
+                  <ChevronRight className="w-5 h-5" />
+                </div>
+                Lihat Layanan
+              </a>
+            </div>
+          </div>
+
+          {/* RIGHT — FOUNDER CARD */}
+          <div data-aos="fade-up" data-aos-delay="150">
+            <div className="border border-gray-200 rounded-xl shadow-md overflow-hidden bg-white">
+              
+              {/* IMAGE */}
+              <div className="w-full h-[360px] bg-gray-50 flex items-center justify-center">
+                <img
+                  src="/assets/hero.webp"
+                  alt="Founder Aksara Cita Pustaka"
+                  className="w-full h-full object-contain p-4"
+                  onError={(e) =>
+                    (e.target.src =
+                      "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600")
+                  }
+                />
+              </div>
+
+              {/* CAPTION */}
+              <div className="px-6 py-4 border-t text-center">
+                <p className="font-semibold text-gray-900">
+                  Founder Aksara Cita Pustaka
+                </p>
+                <p className="text-sm text-gray-500">
+                  Membangun literasi melalui karya bermakna
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* BUKU GESER — UKURAN KECIL & ELEGAN */}
-      <section className="relative bg-gradient-to-b from-white to-purple-50 py-24">
-        <div className="max-w-screen-2xl mx-auto px-6">
-          <h2
-            className="text-center text-4xl md:text-5xl font-bold mb-20"
-            style={{ color: primaryColor }}
-            data-aos="fade-up"
-          >
-            Koleksi Buku Kami
-          </h2>
+      {/* BOOK SHOWCASE */}
+      <section className="bg-gradient-to-b from-white via-purple-50/20 to-white pt-10 pb-20 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6">
+          
+          <div className="text-center mb-12" data-aos="fade-up">
+            <h2
+              className="text-3xl md:text-4xl font-bold mb-4"
+              style={{ color: primaryColor }}
+            >
+              Koleksi Buku Kami
+            </h2>
+            <p className="text-gray-600 text-sm">
+              Karya yang telah diterbitkan bersama Aksara Cita Pustaka
+            </p>
+          </div>
 
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 w-32 md:w-64 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-            <div className="absolute inset-y-0 right-0 w-32 md:w-64 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
-
-            <div className="overflow-hidden">
-              <div className="flex animate-scroll">
-                {[...bookImages, ...bookImages].map((book, idx) => (
-                  <div
-                    key={idx}
-                    className="mx-4 md:mx-8 flex-shrink-0"
-                    data-aos="zoom-in"
-                    data-aos-delay={(idx % bookImages.length) * 50}
-                  >
-                    <div className="w-48 h-72 md:w-56 md:h-80 rounded-2xl shadow-xl overflow-hidden bg-white">
-                      <img
-                        src={book.src}
-                        alt={book.alt}
-                        className="w-full h-full object-cover transition-transform duration-700 hover:scale-110"
-                        onError={(e) =>
-                          (e.target.src = "https://via.placeholder.com/224x320/E5E7EB/6B7280?text=Buku")
-                        }
-                      />
-                    </div>
+          <div className="overflow-hidden">
+            <div className="flex animate-scroll">
+              {[...bookImages, ...bookImages].map((book, idx) => (
+                <div key={idx} className="mx-3 flex-shrink-0">
+                  <div className="w-36 h-52 md:w-40 md:h-56 bg-white rounded-lg shadow-md overflow-hidden">
+                    <img
+                      src={book.src}
+                      alt={book.alt}
+                      className="w-full h-full object-contain p-2"
+                    />
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
         <style jsx>{`
           @keyframes scroll {
-            from { transform: translateX(0); }
-            to   { transform: translateX(-50%); }
+            from {
+              transform: translateX(0);
+            }
+            to {
+              transform: translateX(-50%);
+            }
           }
           .animate-scroll {
-            display: flex;
-            width: max-content;
             animation: scroll 80s linear infinite;
+            width: max-content;
           }
           .animate-scroll:hover {
             animation-play-state: paused;

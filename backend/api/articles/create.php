@@ -1,8 +1,8 @@
 <?php
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 
-// === TAMBAHKAN CORS UNTUK POST + FILE ===
+// CORS untuk POST + upload file
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: X-Auth-Token, Content-Type');
@@ -18,13 +18,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// === INI YANG WAJIB (sama persis seperti buku) ===
-require_once __DIR__ . '/../../config/database.php';     // $pdo dari sini
-require_once __DIR__ . '/../../includes/functions.php';  // upload_file() dan delete_file()
+// Require yang diperlukan
+require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../includes/functions.php';  // upload_file(), delete_file()
+require_once __DIR__ . '/../../middleware/auth.php';     // otentikasi admin
 
-// TAMBAHKAN INI — INI YANG SELAMA INI HILANG!!!
-require_once __DIR__ . '/../../middleware/auth.php';     // Ini yang bikin $pdo pasti ada + cek login
-
+// Fungsi bantu
 if (!function_exists('null_if_empty')) {
     function null_if_empty($value) {
         $trimmed = trim($value ?? '');
@@ -32,16 +31,44 @@ if (!function_exists('null_if_empty')) {
     }
 }
 
-$uploadImage = null;
+// Fungsi generate slug yang aman dan unik
+function generateUniqueSlug($pdo, $title) {
+    // Bersihkan judul jadi slug dasar
+    $slug = strtolower($title);
+    $slug = preg_replace('/[^a-z0-9-]+/', '-', $slug); // ganti karakter aneh jadi -
+    $slug = trim($slug, '-');
+    $slug = $slug ?: 'artikel'; // fallback kalau judul kosong semua
+
+    // Cek apakah slug sudah ada
+    $stmt = $pdo->prepare("SELECT id FROM articles WHERE slug = ? LIMIT 1");
+    $stmt->execute([$slug]);
+    
+    if ($stmt->rowCount() === 0) {
+        return $slug; // unik, langsung pakai
+    }
+
+    // Kalau sudah ada, tambahkan angka di belakang
+    $counter = 1;
+    while (true) {
+        $newSlug = $slug . '-' . $counter;
+        $stmt->execute([$newSlug]);
+        if ($stmt->rowCount() === 0) {
+            return $newSlug;
+        }
+        $counter++;
+    }
+}
+
+// === PROSES UPLOAD FOTO ARTIKEL ===
+$uploadedImage = null;
 $errorUpload = false;
 $errorMessage = '';
 
-// Upload gambar ke folder "articles"
-if (isset($_FILES['foto_buku']) && $_FILES['foto_buku']['error'] === 0) {
+if (isset($_FILES['foto_artikel']) && $_FILES['foto_artikel']['error'] === 0) {
     $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-    $uploadImage = upload_file($_FILES['foto_buku'], 'articles', $allowed);
+    $uploadedImage = upload_file($_FILES['foto_artikel'], 'articles', $allowed);
 
-    if ($uploadImage === false) {
+    if ($uploadedImage === false) {
         $errorUpload = true;
         $errorMessage = 'Format gambar tidak didukung atau gagal upload.';
     }
@@ -53,46 +80,59 @@ if ($errorUpload) {
     exit;
 }
 
-// Ambil data
-$nama_buku    = $_POST['nama_buku'] ?? '';
-$nama_penulis = $_POST['nama_penulis'] ?? '';
-$isi_articles = null_if_empty($_POST['isi_articles']);
+// === AMBIL DATA DARI FORM ===
+$judul        = null_if_empty($_POST['judul'] ?? '');
+$isi_artikel  = null_if_empty($_POST['isi_artikel'] ?? '');
 
-// Validasi
-if (empty($nama_buku) || empty($nama_penulis)) {
-    if ($uploadImage) delete_file($uploadImage, 'articles');
+// Validasi wajib
+if (empty($judul)) {
+    if ($uploadedImage) delete_file($uploadedImage, 'articles');
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Judul dan penulis wajib diisi']);
+    echo json_encode(['success' => false, 'message' => 'Judul artikel wajib diisi']);
     exit;
 }
 
 try {
-    $stmt = $pdo->prepare("INSERT INTO articles (nama_buku, nama_penulis, isi_articles, foto_buku) VALUES (?, ?, ?, ?)");
-    
+    // Generate slug otomatis dari judul
+    $slug = generateUniqueSlug($pdo, $judul);
+
+    // Insert ke database
+    $stmt = $pdo->prepare("
+        INSERT INTO articles 
+            (judul, slug, isi_artikel, foto_artikel, tanggal_publish, created_at, updated_at) 
+        VALUES 
+            (?, ?, ?, ?, NOW(), NOW(), NOW())
+    ");
+
     $stmt->execute([
-        $nama_buku,
-        $nama_penulis,
-        $isi_articles,
-        $uploadImage
+        $judul,
+        $slug,
+        $isi_artikel,
+        $uploadedImage
     ]);
+
+    $newId = $pdo->lastInsertId();
 
     http_response_code(201);
     echo json_encode([
         'success' => true,
         'message' => 'Artikel berhasil ditambahkan!',
-        'id' => $pdo->lastInsertId()
+        'id'      => $newId,
+        'slug'    => $slug,
+        'url'     => '/article/' . $slug  // bonus: langsung kasih URL publik
     ]);
 
 } catch (Exception $e) {
-    if ($uploadImage) delete_file($uploadImage, 'articles');
-    
-    // TAMPILKAN ERROR DETAIL (HANYA UNTUK DEBUG — HAPUS NANTI!)
+    // Hapus file kalau gagal insert
+    if ($uploadedImage) delete_file($uploadedImage, 'articles');
+
+    // Log error (untuk admin lihat di server log)
     error_log("CREATE ARTICLE ERROR: " . $e->getMessage());
-    
+
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Gagal insert: ' . $e->getMessage()  // ini akan kasih tahu error sebenarnya
+        'message' => 'Gagal menyimpan artikel: ' . $e->getMessage()  // hapus ini di production
     ]);
 }
 ?>
