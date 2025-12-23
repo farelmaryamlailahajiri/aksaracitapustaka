@@ -1,8 +1,7 @@
-import React from 'react';
+import React from "react";
 
 // --- CONFIGURATION ---
 const primaryColor = "#3d2269";
-const buttonColor = "#d3a847";
 
 /**
  * Data video review (YouTube Embed)
@@ -19,45 +18,47 @@ const videoReviews = [
 const ReviewSection = () => {
   return (
     <section
-      className="bg-gray-50 py-16 sm:py-24"
-      style={{ fontFamily: 'Inter, sans-serif' }}
+      className="bg-white py-20 px-6"
+      style={{ fontFamily: "Inter, sans-serif" }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div className="max-w-6xl mx-auto">
+        {/* HEADER - SAMA DENGAN ABOUT US */}
+        <div className="text-center mb-16">
+          <h2
+            className="text-4xl md:text-5xl font-bold mb-6"
+            style={{ color: primaryColor }}
+          >
+            Dengar Kisah Sukses Mereka
+          </h2>
+          <div className="w-20 h-1 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full mx-auto mb-6"></div>
 
-        {/* TITLE */}
-        <h2
-          className="text-3xl sm:text-4xl font-bold tracking-tight mb-4"
-          style={{ color: primaryColor }}
-        >
-          Dengar Kisah Sukses Mereka
-        </h2>
-
-        {/* SUBTITLE */}
-        <p className="text-lg text-gray-600 mb-14 max-w-3xl mx-auto">
-          Testimoni inspiratif dari para penulis yang telah berkolaborasi dengan Aksara.
-        </p>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+            Testimoni inspiratif dari para penulis yang telah berkolaborasi
+            dengan kami
+          </p>
+        </div>
 
         {/* VIDEO GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {videoReviews.map((video) => (
-            <div key={video.id} className="w-full">
-
-              <div
-                className="relative overflow-hidden rounded-xl bg-white shadow-md transition-all duration-300 hover:shadow-xl"
-                style={{
-                  paddingTop: '133.33%', // Aspect Ratio 3:4
-                  border: `1px solid rgba(61, 34, 105, 0.15)`
-                }}
-              >
-                <iframe
-                  src={`${video.src}?controls=1`}
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="absolute inset-0 w-full h-full"
-                />
+            <div key={video.id} className="flex flex-col items-center">
+              <div className="relative w-full">
+                <div
+                  className="relative overflow-hidden rounded-lg bg-white shadow-sm border border-gray-100"
+                  style={{
+                    paddingTop: "56.25%", // Aspect Ratio 16:9
+                  }}
+                >
+                  <iframe
+                    src={`${video.src}?modestbranding=1&rel=0`}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="absolute inset-0 w-full h-full"
+                    title={`Video testimoni ${video.id}`}
+                  />
+                </div>
               </div>
-
             </div>
           ))}
         </div>
@@ -73,7 +74,7 @@ const Review = () => {
   return (
     <>
       <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
         rel="stylesheet"
       />
       <div className="min-h-screen antialiased">

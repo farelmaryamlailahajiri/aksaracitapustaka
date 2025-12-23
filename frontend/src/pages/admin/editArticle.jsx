@@ -1,7 +1,11 @@
-// src/pages/admin/EditArticle.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+import { FiArrowLeft, FiSave, FiX, FiUploadCloud, FiFileText, FiImage } from "react-icons/fi";
+
+const primaryColor = "#3d2269";
+const accentColor = "#d3a847";
+const textSecondary = "#5a4b81";
 
 const EditArticle = () => {
   const { id } = useParams();
@@ -16,24 +20,20 @@ const EditArticle = () => {
     nama_penulis: "",     // penulis
     isi_articles: "",     // isi artikel
     foto_buku: null,      // file baru (jika diganti)
-    foto_buku_lama: "",   // nama file lama (agar backend tidak hapus)
+    foto_buku_lama: "",   // nama file lama
   });
 
-  // Fetch data artikel saat komponen mount
   useEffect(() => {
+    window.scrollTo(0, 0);
     const fetchArticle = async () => {
       try {
         const token = localStorage.getItem("admin_token");
-
         const res = await axios.get(`/api/articles/get.php?id=${id}`, {
           headers: { "X-Auth-Token": token || "" },
         });
 
         const article = res.data.data;
-
-        if (!article) {
-          throw new Error("Artikel tidak ditemukan.");
-        }
+        if (!article) throw new Error("Artikel tidak ditemukan.");
 
         setForm({
           nama_buku: article.nama_buku || "",
@@ -43,8 +43,7 @@ const EditArticle = () => {
           foto_buku_lama: article.foto_buku || "",
         });
       } catch (err) {
-        console.error("Gagal fetch artikel:", err);
-        setErrorMsg("Gagal memuat data artikel. Pastikan ID valid dan API berjalan.");
+        setErrorMsg("Gagal memuat data artikel.");
       } finally {
         setFetching(false);
       }
@@ -55,7 +54,6 @@ const EditArticle = () => {
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-
     setForm((prev) => ({
       ...prev,
       [name]: files && files.length > 0 ? files[0] : value,
@@ -65,47 +63,26 @@ const EditArticle = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
-
     setLoading(true);
     setErrorMsg("");
 
     const data = new FormData();
-
-    // Field teks
+    data.append("id", id);
     data.append("nama_buku", form.nama_buku || "");
     data.append("nama_penulis", form.nama_penulis || "");
     data.append("isi_articles", form.isi_articles || "");
-
-    // File baru (jika user mengganti gambar)
-    if (form.foto_buku instanceof File) {
-      data.append("foto_buku", form.foto_buku);
-    }
-
-    // Kirim nama file lama agar backend tahu tidak perlu dihapus
-    if (form.foto_buku_lama) {
-      data.append("foto_buku_lama", form.foto_buku_lama);
-    }
-
-    // ID artikel (wajib!)
-    data.append("id", id);
+    if (form.foto_buku instanceof File) data.append("foto_buku", form.foto_buku);
+    if (form.foto_buku_lama) data.append("foto_buku_lama", form.foto_buku_lama);
 
     try {
       const token = localStorage.getItem("admin_token");
-
       await axios.post("/api/articles/update.php", data, {
-        headers: {
-          "X-Auth-Token": token || "",
-        },
+        headers: { "X-Auth-Token": token || "" },
       });
-
       alert("Artikel berhasil diperbarui!");
-      navigate("/admin"); // sesuaikan dengan route list artikelmu
+      navigate("/admin");
     } catch (err) {
-      console.error("Error update artikel:", err.response || err);
-      const msg =
-        err.response?.data?.message ||
-        "Terjadi kesalahan saat menyimpan artikel.";
-      setErrorMsg("Gagal update artikel: " + msg);
+      setErrorMsg("Gagal memperbarui artikel.");
     } finally {
       setLoading(false);
     }
@@ -113,144 +90,137 @@ const EditArticle = () => {
 
   if (fetching) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-xl font-semibold text-[#3d2269]">
-          Memuat artikel...
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="w-10 h-10 border-4 border-purple-200 border-t-purple-700 rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-10">
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-[#3d2269] mb-8">
-          Edit Artikel
-        </h1>
+    <div className="min-h-screen bg-[#fcfcfd] py-12 px-6">
+      <div className="max-w-4xl mx-auto">
+        
+        {/* Tombol Kembali */}
+        <button
+          onClick={() => navigate("/admin")}
+          className="flex items-center gap-2 text-sm font-bold mb-8 transition-colors hover:opacity-70"
+          style={{ color: textSecondary }}
+        >
+          <FiArrowLeft /> Kembali ke Dashboard
+        </button>
 
-        {/* Error Message */}
-        {errorMsg && (
-          <div
-            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6"
-            role="alert"
-          >
-            <span className="block sm:inline">{errorMsg}</span>
-          </div>
-        )}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+          <div className="p-8 md:p-12">
+            <div className="flex items-center gap-4 mb-10">
+              <div className="p-3 rounded-2xl" style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}>
+                <FiFileText size={28} />
+              </div>
+              <div>
+                <h1 className="text-2xl font-black" style={{ color: primaryColor }}>Edit Artikel</h1>
+                <p className="text-sm" style={{ color: textSecondary }}>ID Artikel: #{id}</p>
+              </div>
+            </div>
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Judul Artikel */}
-          <div className="md:col-span-2">
-            <label
-              htmlFor="nama_buku"
-              className="block text-sm font-semibold text-gray-700 mb-2"
-            >
-              Judul Artikel <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="nama_buku"
-              name="nama_buku"
-              value={form.nama_buku}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#3d2269] focus:outline-none"
-              placeholder="Judul artikel"
-            />
-          </div>
-
-          {/* Penulis */}
-          <div>
-            <label
-              htmlFor="nama_penulis"
-              className="block text-sm font-semibold text-gray-700 mb-2"
-            >
-              Penulis <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="nama_penulis"
-              name="nama_penulis"
-              value={form.nama_penulis}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#3d2269] focus:outline-none"
-              placeholder="Nama penulis"
-            />
-          </div>
-
-          {/* Gambar Cover Saat Ini + Upload Baru */}
-          <div>
-            <label
-              htmlFor="foto_buku"
-              className="block text-sm font-semibold text-gray-700 mb-2"
-            >
-              Gambar Cover Artikel
-            </label>
-
-            {form.foto_buku_lama && (
-              <div className="mb-4">
-                <img
-                  src={`/uploads/articles/${form.foto_buku_lama}`}
-                  alt="Cover artikel"
-                  className="w-48 h-64 object-cover rounded border shadow"
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  Cover saat ini: <strong>{form.foto_buku_lama}</strong>
-                </p>
+            {errorMsg && (
+              <div className="bg-red-50 border border-red-100 text-red-600 px-6 py-4 rounded-2xl mb-8 flex items-center gap-3 text-sm font-medium">
+                <FiX className="flex-shrink-0" /> {errorMsg}
               </div>
             )}
 
-            <input
-              type="file"
-              id="foto_buku"
-              name="foto_buku"
-              accept="image/*"
-              onChange={handleChange}
-              className="w-full px-4 py-3 border rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-[#3d2269] file:text-white hover:file:bg-[#2d1850]"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Biarkan kosong jika tidak ingin mengganti gambar
-            </p>
-          </div>
+            <form onSubmit={handleSubmit} className="space-y-8">
+              
+              {/* Grup 1: Informasi Dasar */}
+              <section>
+                <h2 className="text-[11px] font-black uppercase tracking-[0.2em] mb-6" style={{ color: accentColor }}>1. Identitas Konten</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="text-xs font-bold px-1" style={{ color: primaryColor }}>Judul Artikel *</label>
+                    <input
+                      type="text"
+                      name="nama_buku"
+                      value={form.nama_buku}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 focus:ring-4 focus:ring-purple-50 transition-all outline-none text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold px-1" style={{ color: primaryColor }}>Penulis *</label>
+                    <input
+                      type="text"
+                      name="nama_penulis"
+                      value={form.nama_penulis}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 focus:ring-4 focus:ring-purple-50 transition-all outline-none text-sm"
+                    />
+                  </div>
 
-          {/* Isi Artikel */}
-          <div className="md:col-span-2">
-            <label
-              htmlFor="isi_articles"
-              className="block text-sm font-semibold text-gray-700 mb-2"
-            >
-              Isi Artikel
-            </label>
-            <textarea
-              id="isi_articles"
-              name="isi_articles"
-              value={form.isi_articles}
-              onChange={handleChange}
-              rows="14"
-              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#3d2269] focus:outline-none resize-none"
-              placeholder="Tulis isi artikel di sini..."
-            />
-          </div>
+                  {/* Upload & Preview Gambar */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold px-1" style={{ color: primaryColor }}>Ganti Cover Artikel</label>
+                    <label className="flex items-center justify-center w-full h-[52px] border-2 border-dashed border-slate-200 rounded-2xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-all">
+                        <div className="flex items-center gap-2 text-slate-500">
+                          <FiUploadCloud size={18} />
+                          <p className="text-[10px] font-medium truncate max-w-[150px]">
+                            {form.foto_buku ? form.foto_buku.name : "Pilih file baru..."}
+                          </p>
+                        </div>
+                        <input type="file" name="foto_buku" accept="image/*" onChange={handleChange} className="hidden" />
+                    </label>
+                  </div>
+                </div>
 
-          {/* Tombol */}
-          <div className="md:col-span-2 flex gap-4 mt-8">
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-10 py-4 bg-[#3d2269] text-white font-bold rounded-lg hover:bg-[#2d1850] disabled:opacity-70 disabled:cursor-not-allowed transition shadow-lg"
-            >
-              {loading ? "Menyimpan..." : "UPDATE ARTIKEL"}
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="px-10 py-4 bg-gray-500 text-white font-bold rounded-lg hover:bg-gray-600 transition shadow-lg"
-            >
-              Batal
-            </button>
+                {/* Tampilan Gambar Saat Ini */}
+                {form.foto_buku_lama && !form.foto_buku && (
+                  <div className="mt-6 p-4 bg-slate-50 rounded-2xl border border-slate-100 inline-flex items-center gap-4">
+                    <div className="w-12 h-16 rounded-lg overflow-hidden border border-slate-200">
+                      <img src={`/file.php?t=articles&f=${form.foto_buku_lama}`} alt="Current" className="w-full h-full object-cover" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cover Saat Ini</p>
+                      <p className="text-xs font-medium text-slate-600 truncate max-w-[200px]">{form.foto_buku_lama}</p>
+                    </div>
+                  </div>
+                )}
+              </section>
+
+              {/* Grup 2: Konten Narasi */}
+              <section>
+                <h2 className="text-[11px] font-black uppercase tracking-[0.2em] mb-6" style={{ color: accentColor }}>2. Narasi Lengkap</h2>
+                <div className="space-y-2">
+                  <textarea
+                    name="isi_articles"
+                    value={form.isi_articles}
+                    onChange={handleChange}
+                    rows="15"
+                    className="w-full px-6 py-5 bg-slate-50 border border-transparent rounded-[2rem] focus:bg-white focus:border-purple-200 focus:ring-4 focus:ring-purple-50 transition-all outline-none text-sm leading-relaxed resize-none"
+                    placeholder="Tuliskan isi artikel..."
+                  />
+                </div>
+              </section>
+
+              {/* Tombol Aksi */}
+              <div className="flex flex-col md:flex-row gap-4 pt-6 border-t border-slate-50">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-[2] py-4 bg-[#3d2269] text-white font-bold rounded-2xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-3 shadow-lg shadow-purple-100 disabled:opacity-50"
+                >
+                  <FiSave size={20} />
+                  {loading ? "Menyimpan..." : "SIMPAN PERUBAHAN ARTIKEL"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/admin")}
+                  className="flex-1 py-4 bg-slate-100 text-slate-500 font-bold rounded-2xl hover:bg-slate-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                >
+                  <FiX size={20} /> Batal
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

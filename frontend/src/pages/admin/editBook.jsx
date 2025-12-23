@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+import { FiArrowLeft, FiSave, FiX, FiUploadCloud, FiBookOpen, FiImage, FiFileText } from "react-icons/fi";
+
+const primaryColor = "#3d2269";
+const accentColor = "#d3a847";
+const textSecondary = "#5a4b81";
 
 const EditBook = () => {
   const { id } = useParams();
@@ -27,23 +32,17 @@ const EditBook = () => {
     preview_pdf_lama: "",
   });
 
-  // Ambil data buku saat komponen pertama kali dimuat
   useEffect(() => {
+    window.scrollTo(0, 0);
     const fetchBook = async () => {
       try {
         const token = localStorage.getItem("admin_token");
-        // 🔥 MEMANGGIL get.php DENGAN ID
         const res = await axios.get(`/api/books/get.php?id=${id}`, {
           headers: { "X-Auth-Token": token || "" },
         });
 
-        // 🔥 MENGAKSES DATA DARI res.data.data
         const book = res.data.data;
-
-        // Pastikan 'book' adalah objek dan bukan array kosong
-        if (!book || Array.isArray(book)) {
-            throw new Error("Data buku tidak ditemukan atau format salah.");
-        }
+        if (!book || Array.isArray(book)) throw new Error("Buku tidak ditemukan.");
 
         setForm({
           nama_buku: book.nama_buku || "",
@@ -51,33 +50,27 @@ const EditBook = () => {
           nama_tata_letak: book.nama_tata_letak || "",
           nama_editor: book.nama_editor || "",
           isbn: book.isbn || "",
-          // Konversi ke string untuk input type="number"
-          jumlah_halaman: String(book.jumlah_halaman || ""), 
+          jumlah_halaman: String(book.jumlah_halaman || ""),
           ukuran_buku: book.ukuran_buku || "",
           deskripsi_buku: book.deskripsi_buku || "",
-          // Konversi ke string untuk input type="number"
-          harga_buku: String(book.harga_buku || ""), 
-          // Konversi ke string untuk input type="number"
-          tahun_terbit: String(book.tahun_terbit || ""), 
+          harga_buku: String(book.harga_buku || ""),
+          tahun_terbit: String(book.tahun_terbit || ""),
           foto_buku: null,
           preview_pdf: null,
           foto_buku_lama: book.foto_buku || "",
           preview_pdf_lama: book.preview_pdf || "",
         });
       } catch (err) {
-        console.error("Gagal fetch data buku:", err.response?.data?.message || err.message || err);
-        setErrorMsg("Gagal memuat data buku. Pastikan API get.php?id=... berjalan.");
+        setErrorMsg("Gagal memuat data buku.");
       } finally {
         setFetching(false);
       }
     };
-
     fetchBook();
   }, [id]);
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-
     setForm((prev) => ({
       ...prev,
       [name]: files && files.length > 0 ? files[0] : value,
@@ -87,46 +80,31 @@ const EditBook = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
-
     setLoading(true);
     setErrorMsg("");
 
     const data = new FormData();
-
     Object.keys(form).forEach((key) => {
       const value = form[key];
-
-      // File baru (jika user mengganti)
       if ((key === "foto_buku" || key === "preview_pdf") && value instanceof File) {
         data.append(key, value);
-      }
-      // File lama (kirim nama file yang sudah ada agar backend tahu tidak usah dihapus)
-      else if (key === "foto_buku_lama" || key === "preview_pdf_lama") {
+      } else if (key === "foto_buku_lama" || key === "preview_pdf_lama") {
         if (value) data.append(key, value);
-      }
-      // Field teks / angka
-      else if (value !== null && value !== undefined && key !== "foto_buku" && key !== "preview_pdf") {
+      } else if (value !== null && value !== undefined && key !== "foto_buku" && key !== "preview_pdf") {
         data.append(key, value);
       }
     });
-
-    data.append("id", id); // Selalu kirim ID buku
+    data.append("id", id);
 
     try {
       const token = localStorage.getItem("admin_token");
-      // MEMANGGIL update.php UNTUK SIMPAN
       await axios.post("/api/books/update.php", data, {
-        headers: {
-          "X-Auth-Token": token || "",
-        },
+        headers: { "X-Auth-Token": token || "" },
       });
-
       alert("Buku berhasil diperbarui!");
       navigate("/admin");
     } catch (err) {
-      console.error("Error update buku:", err.response || err);
-      const msg = err.response?.data?.message || "Terjadi kesalahan pada server.";
-      setErrorMsg("Gagal memperbarui buku: " + msg);
+      setErrorMsg("Gagal memperbarui data.");
     } finally {
       setLoading(false);
     }
@@ -134,151 +112,144 @@ const EditBook = () => {
 
   if (fetching) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-xl font-semibold text-[#3d2269]">Memuat data buku...</div>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="w-10 h-10 border-4 border-purple-200 border-t-purple-700 rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-10">
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-[#3d2269] mb-8">Edit Buku</h1>
+    <div className="min-h-screen bg-[#fcfcfd] py-12 px-6">
+      <div className="max-w-4xl mx-auto">
+        <button
+          onClick={() => navigate("/admin")}
+          className="flex items-center gap-2 text-sm font-bold mb-8 transition-colors hover:opacity-70"
+          style={{ color: textSecondary }}
+        >
+          <FiArrowLeft /> Kembali ke Dashboard
+        </button>
 
-        {errorMsg && (
-          <div
-            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6"
-            role="alert"
-          >
-            <span className="block sm:inline">{errorMsg}</span>
-          </div>
-        )}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+          <div className="p-8 md:p-12">
+            <div className="flex items-center gap-4 mb-10">
+              <div className="p-3 rounded-2xl" style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}>
+                <FiBookOpen size={28} />
+              </div>
+              <div>
+                <h1 className="text-2xl font-black" style={{ color: primaryColor }}>Edit Data Buku</h1>
+                <p className="text-sm" style={{ color: textSecondary }}>Perbarui rincian informasi buku ID: #{id}</p>
+              </div>
+            </div>
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* === FIELD WAJIB === */}
-          <div>
-            <label htmlFor="nama_buku" className="block text-sm font-semibold text-gray-700 mb-2">
-              Nama Buku <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="nama_buku"
-              name="nama_buku"
-              value={form.nama_buku}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#3d2269] focus:outline-none"
-              placeholder="Judul Buku"
-            />
-          </div>
-          <div>
-            <label htmlFor="nama_penulis" className="block text-sm font-semibold text-gray-700 mb-2">
-              Penulis <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="nama_penulis"
-              name="nama_penulis"
-              value={form.nama_penulis}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#3d2269] focus:outline-none"
-              placeholder="Nama Penulis"
-            />
-          </div>
-
-          {/* === FIELD OPSIONAL (diperpendek) === */}
-          {/* ... (input fields lainnya seperti tata letak, editor, isbn, halaman, ukuran) ... */}
-           <div>
-            <label htmlFor="nama_tata_letak" className="block text-sm font-semibold text-gray-700 mb-2"> Tata Letak </label>
-            <input type="text" id="nama_tata_letak" name="nama_tata_letak" value={form.nama_tata_letak} onChange={handleChange} className="w-full px-4 py-3 border rounded-lg focus:outline-none" />
-          </div>
-          <div>
-            <label htmlFor="nama_editor" className="block text-sm font-semibold text-gray-700 mb-2"> Editor </label>
-            <input type="text" id="nama_editor" name="nama_editor" value={form.nama_editor} onChange={handleChange} className="w-full px-4 py-3 border rounded-lg focus:outline-none" />
-          </div>
-          <div>
-            <label htmlFor="isbn" className="block text-sm font-semibold text-gray-700 mb-2"> ISBN </label>
-            <input type="text" id="isbn" name="isbn" value={form.isbn} onChange={handleChange} className="w-full px-4 py-3 border rounded-lg focus:outline-none" />
-          </div>
-          <div>
-            <label htmlFor="jumlah_halaman" className="block text-sm font-semibold text-gray-700 mb-2"> Jumlah Halaman </label>
-            <input type="number" id="jumlah_halaman" name="jumlah_halaman" value={form.jumlah_halaman} onChange={handleChange} className="w-full px-4 py-3 border rounded-lg focus:outline-none" />
-          </div>
-          <div>
-            <label htmlFor="ukuran_buku" className="block text-sm font-semibold text-gray-700 mb-2"> Ukuran Buku </label>
-            <input type="text" id="ukuran_buku" name="ukuran_buku" value={form.ukuran_buku} onChange={handleChange} className="w-full px-4 py-3 border rounded-lg focus:outline-none" placeholder="15x23 cm" />
-          </div>
-          <div>
-            <label htmlFor="harga_buku" className="block text-sm font-semibold text-gray-700 mb-2"> Harga (Rp) </label>
-            <input type="number" id="harga_buku" name="harga_buku" value={form.harga_buku} onChange={handleChange} className="w-full px-4 py-3 border rounded-lg focus:outline-none" />
-          </div>
-          <div>
-            <label htmlFor="tahun_terbit" className="block text-sm font-semibold text-gray-700 mb-2"> Tahun Terbit </label>
-            <input type="number" id="tahun_terbit" name="tahun_terbit" value={form.tahun_terbit} onChange={handleChange} min="1900" max="2099" className="w-full px-4 py-3 border rounded-lg focus:outline-none" />
-          </div>
-
-          {/* FILE COVER */}
-          <div>
-            <label htmlFor="foto_buku" className="block text-sm font-semibold text-gray-700 mb-2">Cover Buku (JPG/PNG/WebP)</label>
-            {form.foto_buku_lama && (
-              <div className="mb-3">
-                {/* Asumsi: URL /uploads/ dapat diakses dari frontend */}
-                <img src={`/uploads/${form.foto_buku_lama}`} alt="Cover saat ini" className="w-32 h-48 object-cover rounded border" />
-                <p className="text-xs text-gray-500 mt-1">Cover saat ini: **{form.foto_buku_lama}**</p>
+            {errorMsg && (
+              <div className="bg-red-50 border border-red-100 text-red-600 px-6 py-4 rounded-2xl mb-8 flex items-center gap-3 text-sm font-medium">
+                <FiX className="flex-shrink-0" /> {errorMsg}
               </div>
             )}
-            <input type="file" id="foto_buku" name="foto_buku" accept="image/*" onChange={handleChange} className="w-full px-4 py-3 border rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-[#3d2269] file:text-white hover:file:bg-[#2d1850]" />
-            <p className="text-xs text-gray-500 mt-1">Biarkan kosong jika tidak ingin mengganti cover</p>
-          </div>
 
-          {/* FILE PREVIEW PDF */}
-          <div>
-            <label htmlFor="preview_pdf" className="block text-sm font-semibold text-gray-700 mb-2">Preview PDF</label>
-            {form.preview_pdf_lama && (
-              <div className="mb-3">
-                <a href={`/uploads/${form.preview_pdf_lama}`} target="_blank" rel="noopener noreferrer" className="text-[#3d2269] underline text-sm">
-                  {form.preview_pdf_lama}
-                </a>
-                <p className="text-xs text-gray-500 mt-1">File preview saat ini</p>
+            <form onSubmit={handleSubmit} className="space-y-8">
+              
+              <section>
+                <h2 className="text-[11px] font-black uppercase tracking-[0.2em] mb-6" style={{ color: accentColor }}>1. Informasi Utama</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold px-1" style={{ color: primaryColor }}>Judul Buku *</label>
+                    <input type="text" name="nama_buku" value={form.nama_buku} onChange={handleChange} required className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 transition-all outline-none text-sm" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold px-1" style={{ color: primaryColor }}>Nama Penulis *</label>
+                    <input type="text" name="nama_penulis" value={form.nama_penulis} onChange={handleChange} required className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 transition-all outline-none text-sm" />
+                  </div>
+                </div>
+              </section>
+
+              <section>
+                <h2 className="text-[11px] font-black uppercase tracking-[0.2em] mb-6" style={{ color: accentColor }}>2. Detail Produksi & Harga</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-2 col-span-1">
+                    <label className="text-xs font-bold px-1" style={{ color: primaryColor }}>ISBN</label>
+                    <input type="text" name="isbn" value={form.isbn} onChange={handleChange} className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 outline-none text-sm" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold px-1" style={{ color: primaryColor }}>Tahun Terbit</label>
+                    <input type="number" name="tahun_terbit" value={form.tahun_terbit} onChange={handleChange} className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 outline-none text-sm" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold px-1" style={{ color: primaryColor }}>Harga (Rp)</label>
+                    <input type="number" name="harga_buku" value={form.harga_buku} onChange={handleChange} className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 outline-none text-sm font-bold" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold px-1" style={{ color: primaryColor }}>Halaman</label>
+                    <input type="number" name="jumlah_halaman" value={form.jumlah_halaman} onChange={handleChange} className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 outline-none text-sm" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold px-1" style={{ color: primaryColor }}>Ukuran</label>
+                    <input type="text" name="ukuran_buku" value={form.ukuran_buku} onChange={handleChange} className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 outline-none text-sm" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold px-1" style={{ color: primaryColor }}>Editor</label>
+                    <input type="text" name="nama_editor" value={form.nama_editor} onChange={handleChange} className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 outline-none text-sm" />
+                  </div>
+                </div>
+              </section>
+
+              <section>
+                <h2 className="text-[11px] font-black uppercase tracking-[0.2em] mb-6" style={{ color: accentColor }}>3. Lampiran File</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Bagian Foto */}
+                  <div className="space-y-3">
+                    <label className="text-xs font-bold block" style={{ color: primaryColor }}>Ganti Cover</label>
+                    {form.foto_buku_lama && !form.foto_buku && (
+                       <div className="inline-flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100 mb-2">
+                          <img src={`/file.php?t=covers&f=${form.foto_buku_lama}`} className="w-12 h-16 object-cover rounded-lg shadow-sm" alt="Current" />
+                          <p className="text-[10px] text-slate-400 font-bold max-w-[100px] truncate">{form.foto_buku_lama}</p>
+                       </div>
+                    )}
+                    <label className="flex items-center justify-center w-full h-24 border-2 border-dashed border-slate-200 rounded-2xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-all">
+                      <div className="flex flex-col items-center">
+                        <FiUploadCloud className="text-slate-400" size={20} />
+                        <p className="text-[10px] text-slate-500 font-medium mt-1">{form.foto_buku ? form.foto_buku.name : "Klik untuk upload baru"}</p>
+                      </div>
+                      <input type="file" name="foto_buku" accept="image/*" onChange={handleChange} className="hidden" />
+                    </label>
+                  </div>
+
+                  {/* Bagian PDF */}
+                  <div className="space-y-3">
+                    <label className="text-xs font-bold block" style={{ color: primaryColor }}>Ganti Preview PDF</label>
+                    {form.preview_pdf_lama && !form.preview_pdf && (
+                       <div className="inline-flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100 mb-2">
+                          <div className="p-2 bg-white rounded-lg"><FiFileText className="text-red-500" /></div>
+                          <p className="text-[10px] text-slate-400 font-bold max-w-[100px] truncate">{form.preview_pdf_lama}</p>
+                       </div>
+                    )}
+                    <label className="flex items-center justify-center w-full h-24 border-2 border-dashed border-slate-200 rounded-2xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-all">
+                      <div className="flex flex-col items-center">
+                        <FiUploadCloud className="text-slate-400" size={20} />
+                        <p className="text-[10px] text-slate-500 font-medium mt-1">{form.preview_pdf ? form.preview_pdf.name : "Klik untuk upload baru"}</p>
+                      </div>
+                      <input type="file" name="preview_pdf" accept=".pdf" onChange={handleChange} className="hidden" />
+                    </label>
+                  </div>
+                </div>
+              </section>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold px-1" style={{ color: primaryColor }}>Sinopsis Buku</label>
+                <textarea name="deskripsi_buku" value={form.deskripsi_buku} onChange={handleChange} rows="5" className="w-full px-5 py-4 bg-slate-50 border border-transparent rounded-3xl focus:bg-white focus:border-purple-200 transition-all outline-none text-sm resize-none" />
               </div>
-            )}
-            <input type="file" id="preview_pdf" name="preview_pdf" accept=".pdf" onChange={handleChange} className="w-full px-4 py-3 border rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-[#3d2269] file:text-white hover:file:bg-[#2d1850]" />
-            <p className="text-xs text-gray-500 mt-1">Biarkan kosong jika tidak ingin mengganti preview</p>
-          </div>
 
-          {/* DESKRIPSI */}
-          <div className="md:col-span-2">
-            <label htmlFor="deskripsi_buku" className="block text-sm font-semibold text-gray-700 mb-2">Deskripsi Buku</label>
-            <textarea
-              id="deskripsi_buku"
-              name="deskripsi_buku"
-              value={form.deskripsi_buku}
-              onChange={handleChange}
-              rows="6"
-              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#3d2269] focus:outline-none resize-none"
-              placeholder="Ceritakan tentang buku ini..."
-            />
+              <div className="flex flex-col md:flex-row gap-4 pt-6 border-t border-slate-50">
+                <button type="submit" disabled={loading} className="flex-[2] py-4 bg-[#3d2269] text-white font-bold rounded-2xl hover:opacity-90 transition-all flex items-center justify-center gap-3 shadow-lg shadow-purple-100">
+                  <FiSave size={20} /> {loading ? "Menyimpan..." : "SIMPAN PERUBAHAN"}
+                </button>
+                <button type="button" onClick={() => navigate("/admin")} className="flex-1 py-4 bg-slate-100 text-slate-500 font-bold rounded-2xl hover:bg-slate-200 transition-all flex items-center justify-center gap-2">
+                  <FiX size={20} /> Batal
+                </button>
+              </div>
+            </form>
           </div>
-
-          {/* TOMBOL */}
-          <div className="md:col-span-2 flex gap-4 mt-8">
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-10 py-4 bg-[#3d2269] text-white font-bold rounded-lg hover:bg-[#2d1850] disabled:opacity-70 disabled:cursor-not-allowed transition shadow-lg"
-            >
-              {loading ? "Menyimpan..." : "UPDATE BUKU"}
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate("/admin")}
-              className="px-10 py-4 bg-gray-500 text-white font-bold rounded-lg hover:bg-gray-600 transition shadow-lg"
-            >
-              Batal
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   );

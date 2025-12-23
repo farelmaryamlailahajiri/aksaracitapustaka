@@ -1,4 +1,3 @@
-// src/components/LoginModal.jsx (VERSI DIPERBAIKI)
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -18,10 +17,8 @@ const LoginModal = ({ isOpen, onClose }) => {
     setError("");
 
     try {
-      // PERBAIKAN: Gunakan /api/auth/login.php (dengan slash di depan) 
-      // agar Vite proxy dapat menangkapnya dengan benar dari root.
       const response = await axios.post(
-        "/api/auth/login.php", 
+        "/api/auth/login.php",
         {
           username,
           password,
@@ -38,14 +35,13 @@ const LoginModal = ({ isOpen, onClose }) => {
         localStorage.setItem("isLoggedIn", "true");
 
         onClose(); // tutup modal
-        navigate("/admin"); 
+        navigate("/admin");
       }
     } catch (err) {
       console.error("Login error:", err.response || err);
-      // Menangani error HTTP 401 atau error jaringan lainnya
       setError(
         err.response?.data?.message ||
-          "Login gagal. Pastikan server backend berjalan dan kredensial benar."
+          "Login gagal. Pastikan kredensial benar."
       );
     } finally {
       setLoading(false);
@@ -53,17 +49,26 @@ const LoginModal = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8 relative">
+    // PERBAIKAN: Menggunakan bg-black/60 untuk transparansi yang stabil di Tailwind v3/v4
+    // Tambahan backdrop-blur-sm untuk efek kaca yang elegan
+    <div 
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+      onClick={onClose} // Klik di luar modal untuk menutup
+    >
+      {/* stopPropagation agar klik di dalam form tidak ikut menutup modal */}
+      <div 
+        className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative border border-white/20"
+        onClick={(e) => e.stopPropagation()}
+      >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-3xl font-light"
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-800 text-3xl font-light transition-colors"
         >
-          ×
+          &times;
         </button>
 
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-50 rounded-full mb-4">
             <svg
               className="w-10 h-10 text-[#3d2269]"
               fill="none"
@@ -79,46 +84,44 @@ const LoginModal = ({ isOpen, onClose }) => {
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-[#3d2269]">Login Admin</h2>
-          <p className="text-gray-600 mt-2">Aksara Cita Pustaka</p>
+          <p className="text-gray-500 mt-1">Aksara Cita Pustaka</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            {/* PERBAIKAN: Tambahkan htmlFor untuk aksesibilitas */}
             <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2">
               Username
             </label>
             <input
               type="text"
-              id="username" // <-- Ditambahkan ID
-              name="username" // <-- Ditambahkan NAME
+              id="username"
+              name="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3d2269]"
-              placeholder="aksaraadmin"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#3d2269] focus:border-transparent outline-none transition-all"
+              placeholder="Masukkan username"
               required
             />
           </div>
 
           <div>
-            {/* PERBAIKAN: Tambahkan htmlFor untuk aksesibilitas */}
             <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
               Password
             </label>
             <input
               type="password"
-              id="password" // <-- Ditambahkan ID
-              name="password" // <-- Ditambahkan NAME
+              id="password"
+              name="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3d2269]"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#3d2269] focus:border-transparent outline-none transition-all"
               placeholder="••••••••"
               required
             />
           </div>
 
           {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-lg text-center font-medium">
+            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm text-center font-medium border border-red-100">
               {error}
             </div>
           )}
@@ -126,9 +129,19 @@ const LoginModal = ({ isOpen, onClose }) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 bg-[#3d2269] hover:bg-[#2d1850] text-white font-bold text-lg rounded-lg transition disabled:opacity-70"
+            className="w-full py-4 bg-[#3d2269] hover:bg-[#2d1850] text-white font-bold text-lg rounded-xl transition-all shadow-lg shadow-purple-200 disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {loading ? "Memproses..." : "MASUK"}
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Memproses...
+              </span>
+            ) : (
+              "MASUK"
+            )}
           </button>
         </form>
       </div>

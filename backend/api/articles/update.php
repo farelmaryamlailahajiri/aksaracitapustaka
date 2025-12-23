@@ -25,17 +25,21 @@ if (!$id || !is_numeric($id)) {
     exit;
 }
 
-// Fungsi generate slug unik (sama seperti di create.php)
+// Fungsi generate slug unik (kecualikan ID artikel yang sedang diupdate)
 function generateUniqueSlug($pdo, $title, $currentId = null) {
     $slug = strtolower($title);
     $slug = preg_replace('/[^a-z0-9-]+/', '-', $slug);
     $slug = trim($slug, '-');
     $slug = $slug ?: 'artikel';
 
-    $stmt = $pdo->prepare("SELECT id FROM articles WHERE slug = ? " . ($currentId ? "AND id != ?" : ""));
+    $sql = "SELECT id FROM articles WHERE slug = ?";
     $params = [$slug];
-    if ($currentId) $params[] = $currentId;
+    if ($currentId !== null) {
+        $sql .= " AND id != ?";
+        $params[] = $currentId;
+    }
 
+    $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
 
     if ($stmt->rowCount() === 0) {
@@ -55,8 +59,8 @@ function generateUniqueSlug($pdo, $title, $currentId = null) {
 }
 
 try {
-    // 1. Ambil data artikel lama (untuk foto & slug lama)
-    $stmt = $pdo->prepare("SELECT foto_artikel, slug FROM articles WHERE id = ?");
+    // 1. Ambil data artikel lama (untuk foto lama)
+    $stmt = $pdo->prepare("SELECT foto_buku FROM articles WHERE id = ?");
     $stmt->execute([$id]);
     $oldArticle = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -66,17 +70,16 @@ try {
         exit;
     }
 
-    $oldFoto = $oldArticle['foto_artikel'];
-    $currentFoto = $oldFoto; // default pakai foto lama
+    $currentFoto = $oldArticle['foto_buku']; // default: pakai foto lama
 
-    // 2. === HANDLE UPLOAD FOTO BARU ===
-    if (isset($_FILES['foto_artikel']) && $_FILES['foto_artikel']['error'] === UPLOAD_ERR_OK) {
+    // 2. === HANDLE UPLOAD FOTO BARU ATAU HAPUS FOTO ===
+    if (isset($_FILES['foto_buku']) && $_FILES['foto_buku']['error'] === UPLOAD_ERR_OK) {
         // Hapus foto lama jika ada
         if ($currentFoto) {
             delete_file($currentFoto, 'articles');
         }
 
-        $newImage = upload_file($_FILES['foto_artikel'], 'articles', ['jpg', 'jpeg', 'png', 'webp', 'gif']);
+        $newImage = upload_file($_FILES['foto_buku'], 'articles', ['jpg', 'jpeg', 'png', 'webp', 'gif']);
         if ($newImage === false) {
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Gambar: Ekstensi tidak diizinkan']);
@@ -89,47 +92,52 @@ try {
         }
         $currentFoto = $newImage;
     }
-    // Jika user hapus gambar (kirim input kosong + tidak kirim foto_artikel_lama)
+    // Hapus foto secara eksplisit
     elseif (isset($_POST['hapus_foto']) && $_POST['hapus_foto'] === '1') {
         if ($currentFoto) {
             delete_file($currentFoto, 'articles');
         }
         $currentFoto = null;
     }
-    // Jika tidak ada perubahan foto, pakai yang lama
-    elseif (!empty($_POST['foto_artikel_lama'])) {
-        $currentFoto = $_POST['foto_artikel_lama'];
+    // Jika frontend kirim foto_buku_lama (opsional, untuk konfirmasi)
+    elseif (!empty($_POST['foto_buku_lama'])) {
+        $currentFoto = $_POST['foto_buku_lama'];
     }
 
-    // 3. === AMBIL DATA FORM ===
-    $judul       = trim($_POST['judul'] ?? '');
-    $isi_artikel = $_POST['isi_artikel'] ?? null; // boleh kosong
+    // 3. === AMBIL DATA DARI FORM ===
+    $nama_buku    = trim($_POST['nama_buku'] ?? '');
+    $nama_penulis = trim($_POST['nama_penulis'] ?? '');  // TAMBAHAN: wajib
+    $isi_articles = $_POST['isi_articles'] ?? null;     // boleh kosong
 
-    if (empty($judul)) {
+    // Validasi field wajib
+    if (empty($nama_buku) || empty($nama_penulis)) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Judul artikel wajib diisi']);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Judul artikel dan nama penulis wajib diisi'
+        ]);
         exit;
     }
 
-    // 4. === HANDLE SLUG ===
-    // Regenerate slug jika judul berubah, tapi tetap unik
-    $newSlug = generateUniqueSlug($pdo, $judul, $id);
+    // 4. === GENERATE SLUG BARU (jika judul berubah) ===
+    $newSlug = generateUniqueSlug($pdo, $nama_buku, $id);
 
     // 5. === UPDATE DATABASE ===
     $sql = "UPDATE articles SET 
-                judul         = ?,
+                nama_buku     = ?,
+                nama_penulis  = ?,
                 slug          = ?,
-                isi_artikel   = ?,
-                foto_artikel  = ?,
-                updated_at    = NOW()
+                isi_articles  = ?,
+                foto_buku     = ?
             WHERE id = ?";
 
     $stmt = $pdo->prepare($sql);
 
     $success = $stmt->execute([
-        $judul,
+        $nama_buku,
+        $nama_penulis,     // nilai penulis baru
         $newSlug,
-        $isi_artikel,
+        $isi_articles,
         $currentFoto,
         $id
     ]);

@@ -8,12 +8,12 @@ import {
   FiUser,
   FiBookOpen,
   FiArrowRight,
-  FiEye, // Icon untuk Preview
+  FiEye,
 } from "react-icons/fi";
 
 const primaryColor = "#3d2269";
 const accentColor = "#d3a847";
-const lightBgColor = "#f9fafb";
+const textSecondary = "#5a4b81";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -24,29 +24,23 @@ const ProductDetail = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!id) {
-      setError("ID buku tidak ditemukan.");
-      setLoading(false);
-      return;
-    }
+    window.scrollTo(0, 0);
+    if (!id) return;
 
     const fetchBook = async () => {
       try {
         const res = await axios.get(`/api/books/get_detail.php?id=${id}`);
-
         if (res.data.success && res.data.data) {
           setBook(res.data.data);
         } else {
-          setError(res.data.message || "Buku tidak ditemukan.");
+          setError("Buku tidak ditemukan.");
         }
       } catch (err) {
-        console.error("Gagal memuat detail buku:", err);
-        setError("Tidak dapat memuat detail buku.");
+        setError("Gagal memuat detail buku.");
       } finally {
         setLoading(false);
       }
     };
-
     fetchBook();
   }, [id]);
 
@@ -54,326 +48,238 @@ const ProductDetail = () => {
     const fetchAllBooks = async () => {
       try {
         const res = await axios.get("/api/books/public_get.php");
-
         if (res.data.success && Array.isArray(res.data.data)) {
           setAllBooks(res.data.data);
         }
       } catch (err) {
-        console.error("Gagal memuat buku rekomendasi:", err);
+        console.error(err);
       } finally {
         setLoadingRelated(false);
       }
     };
-
     fetchAllBooks();
   }, []);
 
-  const getRelatedBooks = () => {
-    if (!book || allBooks.length === 0) return [];
+  const relatedBooks = allBooks.filter((b) => b.id !== book?.id).slice(0, 4);
 
-    return allBooks.filter((b) => b.id !== book.id).slice(0, 4);
-  };
-
-  const relatedBooks = getRelatedBooks();
-
-  // Fungsi membuka preview PDF di tab baru
   const handlePreview = () => {
     if (book.preview_pdf) {
-      window.open(`/file.php?t=previews&f=${book.preview_pdf}`, "_blank", "noopener,noreferrer");
+      window.open(
+        `/file.php?t=previews&f=${book.preview_pdf}`,
+        "_blank",
+        "noopener,noreferrer"
+      );
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center pt-24" style={{ backgroundColor: lightBgColor }}>
-        <div className="text-center">
-          <div
-            className="w-16 h-16 border-3 border-t-transparent rounded-full animate-spin mb-4 mx-auto"
-            style={{ borderColor: primaryColor, borderTopColor: "transparent" }}
-          ></div>
-          <p className="text-gray-500">Memuat detail buku...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !book) {
-    return (
-      <div className="min-h-screen flex items-center justify-center pt-24" style={{ backgroundColor: lightBgColor }}>
-        <div className="text-center max-w-md mx-auto px-6">
-          <div
-            className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-6"
-            style={{ backgroundColor: primaryColor + "10" }}
-          >
-            <FiBookOpen size={32} style={{ color: primaryColor }} />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-3">Buku Tidak Ditemukan</h2>
-          <p className="text-gray-600 mb-8">{error || "Buku yang Anda cari tidak tersedia."}</p>
-          <Link
-            to="/product"
-            className="inline-flex items-center gap-2 px-6 py-3 font-medium rounded-lg transition-colors hover:shadow"
-            style={{
-              color: primaryColor,
-              border: `1px solid ${primaryColor + "40"}`,
-              backgroundColor: primaryColor + "05",
-            }}
-          >
-            <FiArrowLeft size={18} />
-            Kembali ke Koleksi Buku
-          </Link>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div
+          className="w-10 h-10 border-2 border-t-transparent rounded-full animate-spin"
+          style={{ borderColor: primaryColor, borderTopColor: "transparent" }}
+        ></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pt-24 pb-16" style={{ backgroundColor: lightBgColor }}>
-      {/* Header Kembali */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">
+    <div className="min-h-screen pt-28 pb-20 bg-white">
+      <div className="max-w-6xl mx-auto px-6">
+        
+        {/* Navigasi Kembali - DISESUAIKAN SEPERTI ARTIKEL */}
         <Link
           to="/product"
-          className="inline-flex items-center gap-2 font-medium hover:underline transition"
-          style={{ color: primaryColor }}
+          className="inline-flex items-center gap-3 text-sm font-bold tracking-wider uppercase mb-10 transition-all hover:gap-4"
+          style={{ color: textSecondary }}
         >
-          <FiArrowLeft size={18} />
-          Kembali ke Koleksi
+          <FiArrowLeft size={20} /> Kembali ke Koleksi
         </Link>
-      </div>
 
-      {/* Konten Utama */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Kartu Detail Buku */}
-        <div
-          className="bg-white rounded-xl shadow-sm overflow-hidden mb-12"
-          style={{ border: `1px solid ${primaryColor + "10"}` }}
-        >
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-            {/* Cover Buku */}
-            <div className="p-8 lg:p-12 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-              <div className="relative w-full max-w-md">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+          
+          {/* SISI KIRI: COVER BUKU */}
+          <div className="lg:col-span-5 flex justify-center">
+            <div className="relative group w-full max-w-[320px]">
+              <div className="aspect-[3/4.2] bg-gray-50 rounded-2xl overflow-hidden flex items-center justify-center border border-gray-100 shadow-sm transition-shadow hover:shadow-md">
                 {book.foto_buku ? (
                   <img
                     src={`/file.php?t=covers&f=${book.foto_buku}`}
                     alt={book.nama_buku}
-                    className="w-full h-auto max-h-[500px] object-contain shadow-lg rounded-lg"
-                    onError={(e) => {
-                      e.target.src = "/assets/no-book-cover.jpg";
-                    }}
+                    className="w-full h-full object-contain p-4 transform group-hover:scale-105 transition-transform duration-700"
                   />
                 ) : (
-                  <div
-                    className="w-full h-[400px] flex items-center justify-center rounded-lg"
-                    style={{ backgroundColor: primaryColor + "05" }}
-                  >
-                    <FiBookOpen size={80} className="text-gray-300" />
-                  </div>
-                )}
-
-                {/* Badge Harga */}
-                {book.harga_buku && (
-                  <div
-                    className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 px-6 py-3 text-white font-bold rounded-full shadow-lg min-w-[200px] text-center"
-                    style={{ backgroundColor: accentColor }}
-                  >
-                    Rp {Number(book.harga_buku).toLocaleString("id-ID")}
-                  </div>
+                  <FiBookOpen size={60} className="text-gray-200" />
                 )}
               </div>
             </div>
+          </div>
 
-            {/* Informasi Buku & Tombol Aksi */}
-            <div className="p-8 lg:p-12">
-              <div className="mb-8">
-                <h1 className="text-3xl lg:text-4xl font-bold mb-6 leading-tight" style={{ color: primaryColor }}>
-                  {book.nama_buku}
-                </h1>
+          {/* SISI KANAN: INFO BUKU */}
+          <div className="lg:col-span-7">
+            <div className="mb-2">
+              <span
+                className="text-[10px] font-bold tracking-[0.2em] uppercase"
+                style={{ color: accentColor }}
+              >
+                Penerbit Aksara Cita Pustaka
+              </span>
+              <h1
+                className="text-2xl md:text-3xl font-extrabold mt-1 mb-1 leading-tight"
+                style={{ color: primaryColor }}
+              >
+                {book.nama_buku}
+              </h1>
+              <p
+                className="text-base font-semibold mb-3"
+                style={{ color: textSecondary }}
+              >
+                {book.nama_penulis || "Penulis Aksara"}
+              </p>
 
-                {/* Penulis */}
-                <div className="flex items-center gap-3 mb-6">
-                  <div
-                    className="flex items-center justify-center w-10 h-10 rounded-full"
-                    style={{ backgroundColor: primaryColor + "10" }}
-                  >
-                    <FiUser size={18} style={{ color: primaryColor }} />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Penulis</p>
-                    <p className="font-medium text-gray-900">{book.nama_penulis || "Tidak diketahui"}</p>
-                  </div>
-                </div>
-
-                {/* Metadata */}
-                <div className="space-y-4 mb-8">
-                  {book.tahun_terbit && (
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="flex items-center justify-center w-8 h-8 rounded"
-                        style={{ backgroundColor: primaryColor + "10" }}
-                      >
-                        <FiCalendar size={14} style={{ color: primaryColor }} />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Tahun Terbit</p>
-                        <p className="text-gray-900">{book.tahun_terbit}</p>
-                      </div>
-                    </div>
-                  )}
-                  {book.isbn && (
-                    <div className="flex items-start gap-3">
-                      <div className="text-sm text-gray-500 min-w-[80px]">ISBN</div>
-                      <div className="text-gray-900 font-mono">{book.isbn}</div>
-                    </div>
-                  )}
-                  {book.jumlah_halaman && (
-                    <div className="flex items-start gap-3">
-                      <div className="text-sm text-gray-500 min-w-[80px]">Halaman</div>
-                      <div className="text-gray-900">{book.jumlah_halaman} halaman</div>
-                    </div>
-                  )}
-                  {book.ukuran_buku && (
-                    <div className="flex items-start gap-3">
-                      <div className="text-sm text-gray-500 min-w-[80px]">Ukuran</div>
-                      <div className="text-gray-900">{book.ukuran_buku}</div>
-                    </div>
-                  )}
-                </div>
+              <div
+                className="text-xl font-black mb-4"
+                style={{ color: primaryColor }}
+              >
+                Rp {Number(book.harga_buku).toLocaleString("id-ID")}
               </div>
+            </div>
 
-              {/* Tombol Aksi: Beli & Preview */}
-              <div className="pt-6 border-t" style={{ borderColor: primaryColor + "10" }}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Beli Sekarang */}
-                  <a
-                    href="https://id.shp.ee/gJ84wYK"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full py-4 text-lg font-semibold text-white rounded-lg transition-all hover:shadow-lg flex items-center justify-center gap-3"
-                    style={{
-                      backgroundColor: accentColor,
-                      boxShadow: `0 4px 6px ${accentColor + "40"}`,
-                    }}
-                  >
-                    <FiShoppingCart size={20} />
-                    BELI SEKARANG
-                  </a>
-
-                  {/* Preview Buku */}
-                  {book.preview_pdf && (
-                    <button
-                      onClick={handlePreview}
-                      className="w-full py-4 text-lg font-semibold text-white rounded-lg transition-all hover:shadow-lg flex items-center justify-center gap-3"
-                      style={{ backgroundColor: primaryColor }}
-                    >
-                      <FiEye size={20} />
-                      LIHAT BUKU
-                    </button>
-                  )}
-                </div>
-
-                {/* Kode Buku */}
-                <div className="text-center mt-6">
-                  <p className="text-sm text-gray-500">
-                    Kode Buku: <span className="font-mono">#{book.id}</span>
-                  </p>
-                </div>
+            {/* Spesifikasi - Font text-base (16px) sesuai permintaan */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-y-5 gap-x-4 mb-8 py-5 border-y border-gray-100">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">
+                  ISBN
+                </p>
+                <p className="text-base font-bold" style={{ color: primaryColor }}>
+                  {book.isbn || "-"}
+                </p>
               </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">
+                  Tahun
+                </p>
+                <p className="text-base font-bold" style={{ color: primaryColor }}>
+                  {book.tahun_terbit || "-"}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">
+                  Halaman
+                </p>
+                <p className="text-base font-bold" style={{ color: primaryColor }}>
+                  {book.jumlah_halaman ? `${book.jumlah_halaman} Hal` : "-"}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-1 text-gray-400">
+                  Dimensi
+                </p>
+                <p className="text-base font-bold" style={{ color: primaryColor }}>
+                  {book.ukuran_buku || "-"}
+                </p>
+              </div>
+            </div>
+
+            {/* Tombol Aksi */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <a
+                href="https://wa.me/6285183220443"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-[2] px-6 py-3.5 rounded-xl font-bold text-white text-center transition-all hover:opacity-90 active:scale-95 flex items-center justify-center gap-3 shadow-lg shadow-purple-50"
+                style={{ backgroundColor: primaryColor }}
+              >
+                <FiShoppingCart size={18} /> BELI SEKARANG
+              </a>
+
+              {book.preview_pdf && (
+                <button
+                  onClick={handlePreview}
+                  className="flex-1 px-6 py-3.5 rounded-xl font-bold border-2 transition-all active:scale-95 flex items-center justify-center gap-2"
+                  style={{ color: primaryColor, borderColor: primaryColor }}
+                >
+                  <FiEye size={18} /> PREVIEW
+                </button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Deskripsi Buku */}
+        {/* Section Deskripsi */}
         {book.deskripsi_buku && (
-          <div
-            className="bg-white rounded-xl shadow-sm overflow-hidden mb-12 p-8 lg:p-12"
-            style={{ border: `1px solid ${primaryColor + "10"}` }}
-          >
-            <h2
-              className="text-2xl font-bold mb-8 pb-4"
-              style={{
-                color: primaryColor,
-                borderBottom: `2px solid ${primaryColor + "20"}`,
-              }}
+          <div className="mt-16 max-w-4xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div
+                className="w-6 h-1 rounded-full"
+                style={{ backgroundColor: accentColor }}
+              ></div>
+              <h2
+                className="text-xs font-black uppercase tracking-[0.2em]"
+                style={{ color: primaryColor }}
+              >
+                Sinopsis Buku
+              </h2>
+            </div>
+            <div
+              className="prose prose-sm max-w-none leading-relaxed text-justify"
+              style={{ color: textSecondary }}
             >
-              Deskripsi Buku
-            </h2>
-            <div className="prose prose-lg max-w-none">
-              <p className="text-gray-700 leading-relaxed whitespace-pre-line">{book.deskripsi_buku}</p>
+              <p className="whitespace-pre-line text-sm">
+                {book.deskripsi_buku}
+              </p>
             </div>
           </div>
         )}
 
-        {/* Rekomendasi Buku Lainnya */}
+        {/* Section Rekomendasi */}
         {relatedBooks.length > 0 && (
-          <div className="mt-16">
+          <div className="mt-20 pt-12 border-t border-gray-50">
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-bold" style={{ color: primaryColor }}>
-                Rekomendasi Buku Lainnya
+              <h2 className="text-xl font-extrabold" style={{ color: primaryColor }}>
+                Rekomendasi Lainnya
               </h2>
               <Link
                 to="/product"
-                className="inline-flex items-center gap-2 text-sm font-medium hover:underline transition"
-                style={{ color: primaryColor }}
+                className="text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-[#3d2269]"
               >
                 Lihat Semua
-                <FiArrowRight size={16} />
               </Link>
             </div>
 
-            {loadingRelated ? (
-              <div className="flex justify-center py-12">
-                <div
-                  className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin"
-                  style={{ borderColor: primaryColor, borderTopColor: "transparent" }}
-                ></div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {relatedBooks.map((relatedBook) => (
-                  <Link
-                    key={relatedBook.id}
-                    to={`/product/${relatedBook.id}`}
-                    className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-all duration-200 group border"
-                    style={{ borderColor: primaryColor + "10" }}
-                  >
-                    <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100">
-                      {relatedBook.foto_buku ? (
-                        <img
-                          src={`/file.php?t=covers&f=${relatedBook.foto_buku}`}
-                          alt={relatedBook.nama_buku}
-                          className="w-full h-full object-contain p-4"
-                          onError={(e) => {
-                            e.target.src = "/assets/no-book-cover.jpg";
-                          }}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <FiBookOpen size={32} className="text-gray-300" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <h3
-                        className="font-medium text-gray-900 text-sm line-clamp-2 mb-2 group-hover:underline"
-                        style={{ color: primaryColor }}
-                      >
-                        {relatedBook.nama_buku}
-                      </h3>
-                      <p className="text-gray-600 text-xs mb-1">
-                        {relatedBook.nama_penulis || "Penulis tidak diketahui"}
-                      </p>
-                      <div className="flex items-center justify-between mt-3">
-                        <p className="text-xs text-gray-500">{relatedBook.tahun_terbit || "-"}</p>
-                        {relatedBook.harga_buku && (
-                          <p className="text-sm font-semibold" style={{ color: accentColor }}>
-                            Rp {Number(relatedBook.harga_buku).toLocaleString("id-ID")}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+              {relatedBooks.map((rb) => (
+                <Link
+                  key={rb.id}
+                  to={`/product/${rb.id}`}
+                  className="group flex flex-col items-center"
+                >
+                  <div className="relative w-full max-w-[160px] aspect-[3/4.2] bg-gray-50 rounded-xl overflow-hidden mb-3 border border-gray-100 flex items-center justify-center p-2 transition-all group-hover:border-purple-200 group-hover:shadow-sm">
+                    {rb.foto_buku ? (
+                      <img
+                        src={`/file.php?t=covers&f=${rb.foto_buku}`}
+                        alt={rb.nama_buku}
+                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <FiBookOpen size={20} className="text-gray-200" />
+                    )}
+                  </div>
+
+                  <div className="text-center w-full max-w-[160px]">
+                    <h3
+                      className="text-[11px] md:text-xs font-bold line-clamp-1 transition-colors group-hover:text-purple-700 leading-tight"
+                      style={{ color: primaryColor }}
+                    >
+                      {rb.nama_buku}
+                    </h3>
+                    <p className="text-[9px] font-medium text-gray-400 mt-0.5 uppercase tracking-tighter truncate">
+                      {rb.nama_penulis || "Aksara"}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
         )}
       </div>
