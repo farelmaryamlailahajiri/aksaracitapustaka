@@ -7,10 +7,10 @@ import {
   useLocation,
 } from "react-router-dom";
 
-import Header from "./components/Header";
+import Header from "./components/header";
 import Footer from "./components/footer";
 
-import LandingPage from "./pages/landingpage";
+import LandingPage from "./pages/landingPage";
 import Service from "./pages/service";
 import Product from "./pages/product";
 import ProductDetail from "./pages/productDetail";
@@ -45,8 +45,8 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/service" element={<Service />} />
-          <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/product" element={<Product />} />
+          <Route path="/product/:slugOrId" element={<ProductDetail />} />
           <Route path="/article" element={<Article />} />
           <Route path="/article/:slugOrId" element={<ArticleDetail />} />
           <Route path="/contact" element={<Contact />} />

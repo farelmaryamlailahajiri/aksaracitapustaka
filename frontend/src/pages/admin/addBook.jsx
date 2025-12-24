@@ -70,10 +70,9 @@ const AddBook = () => {
     <div className="min-h-screen bg-[#fcfcfd] py-12 px-6">
       <div className="max-w-4xl mx-auto">
         
-        {/* Tombol Kembali yang Minimalis */}
         <button
           onClick={() => navigate("/admin")}
-          className="flex items-center gap-2 text-sm font-bold mb-8 transition-colors"
+          className="flex items-center gap-2 text-sm font-bold mb-8 transition-colors hover:opacity-70"
           style={{ color: textSecondary }}
         >
           <FiArrowLeft /> Kembali ke Dashboard
@@ -130,7 +129,7 @@ const AddBook = () => {
                 </div>
               </section>
 
-              {/* Grup: Detail Teknis */}
+              {/* Grup: Detail Teknis - DITAMBAHKAN EDITOR & TATA LETAK */}
               <section>
                 <h2 className="text-[11px] font-black uppercase tracking-[0.2em] mb-6" style={{ color: accentColor }}>2. Detail Produksi & Harga</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -154,9 +153,31 @@ const AddBook = () => {
                     <label className="text-xs font-bold px-1" style={{ color: primaryColor }}>Ukuran Buku</label>
                     <input type="text" name="ukuran_buku" value={form.ukuran_buku} onChange={handleChange} className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 transition-all outline-none text-sm" placeholder="15.5 x 23 cm" />
                   </div>
+                  
+                  {/* Field Baru: Editor */}
                   <div className="space-y-2">
                     <label className="text-xs font-bold px-1" style={{ color: primaryColor }}>Editor</label>
-                    <input type="text" name="nama_editor" value={form.nama_editor} onChange={handleChange} className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 transition-all outline-none text-sm" placeholder="Nama Editor" />
+                    <input 
+                      type="text" 
+                      name="nama_editor" 
+                      value={form.nama_editor} 
+                      onChange={handleChange} 
+                      className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 transition-all outline-none text-sm" 
+                      placeholder="Nama Editor" 
+                    />
+                  </div>
+
+                  {/* Field Baru: Tata Letak */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold px-1" style={{ color: primaryColor }}>Tata Letak</label>
+                    <input 
+                      type="text" 
+                      name="nama_tata_letak" 
+                      value={form.nama_tata_letak} 
+                      onChange={handleChange} 
+                      className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 transition-all outline-none text-sm" 
+                      placeholder="Nama Penata Letak" 
+                    />
                   </div>
                 </div>
               </section>

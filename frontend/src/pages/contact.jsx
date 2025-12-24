@@ -1,8 +1,18 @@
-import React from "react";
+import React, { useEffect } from "react";
+import AOS from "aos";
+import "aos/dist/aos.css";
 
 const Contact = () => {
   const primaryColor = "#3d2269";
   const goldColor = "#d3a847";
+
+  // Inisialisasi AOS saat komponen dimuat
+  useEffect(() => {
+    AOS.init({
+      duration: 1000,
+      once: true,
+    });
+  }, []);
 
   const contacts = [
     {
@@ -55,11 +65,11 @@ const Contact = () => {
   const mapUrl = "https://maps.google.com/?q=Jl.+Bareng+Tengah+V+No.788+Bareng+Klojen+Malang&output=embed";
 
   return (
-    <div className="min-h-screen bg-white pt-32 pb-20 px-6">
+    <div className="min-h-screen bg-white pt-32 pb-20 px-6 overflow-x-hidden">
       <div className="max-w-6xl mx-auto">
         
         {/* HEADER */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-16" data-aos="fade-up">
           <h1 
             className="text-4xl md:text-5xl font-bold mb-6"
             style={{ color: primaryColor }}
@@ -82,6 +92,8 @@ const Contact = () => {
               {contacts.map((contact, index) => (
                 <div 
                   key={index}
+                  data-aos="fade-right"
+                  data-aos-delay={index * 150}
                   className="border border-gray-100 rounded-lg p-6 bg-white shadow-sm hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-start">
@@ -118,7 +130,7 @@ const Contact = () => {
             </div>
 
             {/* WORKING HOURS */}
-            <div className="mt-10 border border-gray-100 rounded-lg p-6 bg-white shadow-sm">
+            <div className="mt-10 border border-gray-100 rounded-lg p-6 bg-white shadow-sm" data-aos="fade-up">
               <div className="flex items-start mb-4">
                 <div 
                   className="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center mr-4"
@@ -152,10 +164,9 @@ const Contact = () => {
             </div>
           </div>
 
-          {/* RIGHT COLUMN - MAP YANG MEMANJANG KE BAWAH */}
-          <div className="flex flex-col h-full">
+          {/* RIGHT COLUMN - MAP */}
+          <div className="flex flex-col h-full" data-aos="fade-left">
             <div className="border border-gray-100 rounded-lg overflow-hidden shadow-sm flex-grow flex flex-col">
-              {/* MAP TINGGI PENUH */}
               <div className="flex-grow">
                 <iframe
                   src={mapUrl}
@@ -170,7 +181,6 @@ const Contact = () => {
                 />
               </div>
               
-              {/* ALAMAT DI BAWAH MAP */}
               <div className="p-6 border-t border-gray-100 bg-white">
                 <div className="flex items-start mb-3">
                   <div 
@@ -212,7 +222,7 @@ const Contact = () => {
         </div>
 
         {/* CTA */}
-        <div className="mt-20 text-center">
+        <div className="mt-20 text-center" data-aos="zoom-in">
           <p className="text-lg text-gray-600 mb-6">
             Siap berkonsultasi tentang penerbitan buku Anda?
           </p>
@@ -220,7 +230,7 @@ const Contact = () => {
             href="https://wa.me/6285183220443"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-3 px-8 py-4 rounded-lg font-bold text-white shadow-md transition-all hover:shadow-lg hover:scale-[1.02]"
+            className="inline-flex items-center justify-center gap-3 px-8 py-4 rounded-lg font-bold text-white shadow-md transition-all hover:shadow-lg hover:scale-[1.05]"
             style={{ backgroundColor: goldColor }}
           >
             Chat WhatsApp Sekarang

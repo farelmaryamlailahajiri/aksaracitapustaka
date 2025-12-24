@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import { FiArrowLeft, FiSave, FiX, FiUploadCloud, FiBookOpen, FiImage, FiFileText } from "react-icons/fi";
+import { FiArrowLeft, FiSave, FiX, FiUploadCloud, FiBookOpen, FiFileText } from "react-icons/fi";
 
 const primaryColor = "#3d2269";
 const accentColor = "#d3a847";
@@ -149,6 +149,7 @@ const EditBook = () => {
 
             <form onSubmit={handleSubmit} className="space-y-8">
               
+              {/* 1. Informasi Utama */}
               <section>
                 <h2 className="text-[11px] font-black uppercase tracking-[0.2em] mb-6" style={{ color: accentColor }}>1. Informasi Utama</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -163,40 +164,46 @@ const EditBook = () => {
                 </div>
               </section>
 
+              {/* 2. Detail Produksi & Harga */}
               <section>
                 <h2 className="text-[11px] font-black uppercase tracking-[0.2em] mb-6" style={{ color: accentColor }}>2. Detail Produksi & Harga</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="space-y-2 col-span-1">
+                  <div className="space-y-2">
                     <label className="text-xs font-bold px-1" style={{ color: primaryColor }}>ISBN</label>
-                    <input type="text" name="isbn" value={form.isbn} onChange={handleChange} className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 outline-none text-sm" />
+                    <input type="text" name="isbn" value={form.isbn} onChange={handleChange} className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 outline-none text-sm" placeholder="978-xxx-..." />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold px-1" style={{ color: primaryColor }}>Tahun Terbit</label>
-                    <input type="number" name="tahun_terbit" value={form.tahun_terbit} onChange={handleChange} className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 outline-none text-sm" />
+                    <input type="number" name="tahun_terbit" value={form.tahun_terbit} onChange={handleChange} className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 outline-none text-sm" placeholder="2025" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold px-1" style={{ color: primaryColor }}>Harga (Rp)</label>
-                    <input type="number" name="harga_buku" value={form.harga_buku} onChange={handleChange} className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 outline-none text-sm font-bold" />
+                    <input type="number" name="harga_buku" value={form.harga_buku} onChange={handleChange} className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 outline-none text-sm font-bold" placeholder="0" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold px-1" style={{ color: primaryColor }}>Halaman</label>
-                    <input type="number" name="jumlah_halaman" value={form.jumlah_halaman} onChange={handleChange} className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 outline-none text-sm" />
+                    <input type="number" name="jumlah_halaman" value={form.jumlah_halaman} onChange={handleChange} className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 outline-none text-sm" placeholder="230" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold px-1" style={{ color: primaryColor }}>Ukuran</label>
-                    <input type="text" name="ukuran_buku" value={form.ukuran_buku} onChange={handleChange} className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 outline-none text-sm" />
+                    <label className="text-xs font-bold px-1" style={{ color: primaryColor }}>Ukuran Buku</label>
+                    <input type="text" name="ukuran_buku" value={form.ukuran_buku} onChange={handleChange} className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 outline-none text-sm" placeholder="15.5 x 23 cm" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold px-1" style={{ color: primaryColor }}>Editor</label>
-                    <input type="text" name="nama_editor" value={form.nama_editor} onChange={handleChange} className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 outline-none text-sm" />
+                    <input type="text" name="nama_editor" value={form.nama_editor} onChange={handleChange} className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 outline-none text-sm" placeholder="Nama Editor" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold px-1" style={{ color: primaryColor }}>Tata Letak</label>
+                    <input type="text" name="nama_tata_letak" value={form.nama_tata_letak} onChange={handleChange} className="w-full px-5 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-purple-200 outline-none text-sm" placeholder="Nama Penata Letak" />
                   </div>
                 </div>
               </section>
 
+              {/* 3. Lampiran File */}
               <section>
                 <h2 className="text-[11px] font-black uppercase tracking-[0.2em] mb-6" style={{ color: accentColor }}>3. Lampiran File</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {/* Bagian Foto */}
+                  {/* Foto Buku */}
                   <div className="space-y-3">
                     <label className="text-xs font-bold block" style={{ color: primaryColor }}>Ganti Cover</label>
                     {form.foto_buku_lama && !form.foto_buku && (
@@ -205,16 +212,16 @@ const EditBook = () => {
                           <p className="text-[10px] text-slate-400 font-bold max-w-[100px] truncate">{form.foto_buku_lama}</p>
                        </div>
                     )}
-                    <label className="flex items-center justify-center w-full h-24 border-2 border-dashed border-slate-200 rounded-2xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-all">
+                    <label className="flex items-center justify-center w-full h-32 border-2 border-dashed border-slate-200 rounded-3xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-all">
                       <div className="flex flex-col items-center">
-                        <FiUploadCloud className="text-slate-400" size={20} />
-                        <p className="text-[10px] text-slate-500 font-medium mt-1">{form.foto_buku ? form.foto_buku.name : "Klik untuk upload baru"}</p>
+                        <FiUploadCloud className="text-slate-400" size={24} />
+                        <p className="text-[10px] text-slate-500 font-medium mt-1">{form.foto_buku ? form.foto_buku.name : "Klik untuk upload cover baru"}</p>
                       </div>
                       <input type="file" name="foto_buku" accept="image/*" onChange={handleChange} className="hidden" />
                     </label>
                   </div>
 
-                  {/* Bagian PDF */}
+                  {/* PDF Preview */}
                   <div className="space-y-3">
                     <label className="text-xs font-bold block" style={{ color: primaryColor }}>Ganti Preview PDF</label>
                     {form.preview_pdf_lama && !form.preview_pdf && (
@@ -223,10 +230,10 @@ const EditBook = () => {
                           <p className="text-[10px] text-slate-400 font-bold max-w-[100px] truncate">{form.preview_pdf_lama}</p>
                        </div>
                     )}
-                    <label className="flex items-center justify-center w-full h-24 border-2 border-dashed border-slate-200 rounded-2xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-all">
+                    <label className="flex items-center justify-center w-full h-32 border-2 border-dashed border-slate-200 rounded-3xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-all">
                       <div className="flex flex-col items-center">
-                        <FiUploadCloud className="text-slate-400" size={20} />
-                        <p className="text-[10px] text-slate-500 font-medium mt-1">{form.preview_pdf ? form.preview_pdf.name : "Klik untuk upload baru"}</p>
+                        <FiUploadCloud className="text-slate-400" size={24} />
+                        <p className="text-[10px] text-slate-500 font-medium mt-1">{form.preview_pdf ? form.preview_pdf.name : "Klik untuk upload PDF baru"}</p>
                       </div>
                       <input type="file" name="preview_pdf" accept=".pdf" onChange={handleChange} className="hidden" />
                     </label>
@@ -234,16 +241,18 @@ const EditBook = () => {
                 </div>
               </section>
 
+              {/* Deskripsi */}
               <div className="space-y-2">
                 <label className="text-xs font-bold px-1" style={{ color: primaryColor }}>Sinopsis Buku</label>
-                <textarea name="deskripsi_buku" value={form.deskripsi_buku} onChange={handleChange} rows="5" className="w-full px-5 py-4 bg-slate-50 border border-transparent rounded-3xl focus:bg-white focus:border-purple-200 transition-all outline-none text-sm resize-none" />
+                <textarea name="deskripsi_buku" value={form.deskripsi_buku} onChange={handleChange} rows="5" className="w-full px-5 py-4 bg-slate-50 border border-transparent rounded-3xl focus:bg-white focus:border-purple-200 focus:ring-4 focus:ring-purple-50 transition-all outline-none text-sm resize-none" placeholder="Tuliskan deskripsi buku..." />
               </div>
 
+              {/* Tombol Aksi */}
               <div className="flex flex-col md:flex-row gap-4 pt-6 border-t border-slate-50">
-                <button type="submit" disabled={loading} className="flex-[2] py-4 bg-[#3d2269] text-white font-bold rounded-2xl hover:opacity-90 transition-all flex items-center justify-center gap-3 shadow-lg shadow-purple-100">
+                <button type="submit" disabled={loading} className="flex-[2] py-4 bg-[#3d2269] text-white font-bold rounded-2xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-3 shadow-lg shadow-purple-100">
                   <FiSave size={20} /> {loading ? "Menyimpan..." : "SIMPAN PERUBAHAN"}
                 </button>
-                <button type="button" onClick={() => navigate("/admin")} className="flex-1 py-4 bg-slate-100 text-slate-500 font-bold rounded-2xl hover:bg-slate-200 transition-all flex items-center justify-center gap-2">
+                <button type="button" onClick={() => navigate("/admin")} className="flex-1 py-4 bg-slate-100 text-slate-500 font-bold rounded-2xl hover:bg-slate-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
                   <FiX size={20} /> Batal
                 </button>
               </div>

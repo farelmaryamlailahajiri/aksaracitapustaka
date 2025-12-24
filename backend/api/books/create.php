@@ -1,7 +1,16 @@
 <?php
 // backend/api/books/create.php
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: X-Auth-Token, Content-Type');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
 require '../../config/database.php';
 require '../../includes/functions.php';
 require '../../middleware/auth.php'; // Otentikasi Admin
@@ -12,10 +21,38 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// Helper: Null jika string kosong
 if (!function_exists('null_if_empty')) {
     function null_if_empty($value) {
         $trimmed = trim($value ?? '');
         return empty($trimmed) ? null : $trimmed;
+    }
+}
+
+/**
+ * Generate slug unik untuk tabel books
+ */
+function generateUniqueBookSlug($pdo, $title) {
+    $slug = strtolower($title);
+    $slug = preg_replace('/[^a-z0-9-]+/', '-', $slug);
+    $slug = trim($slug, '-');
+    $slug = $slug ?: 'buku';
+
+    $stmt = $pdo->prepare("SELECT id FROM books WHERE slug = ? LIMIT 1");
+    $stmt->execute([$slug]);
+
+    if ($stmt->rowCount() === 0) {
+        return $slug;
+    }
+
+    $counter = 1;
+    while (true) {
+        $newSlug = $slug . '-' . $counter;
+        $stmt->execute([$newSlug]);
+        if ($stmt->rowCount() === 0) {
+            return $newSlug;
+        }
+        $counter++;
     }
 }
 
@@ -24,13 +61,10 @@ $uploadPreview = null;
 $errorUpload = false;
 $errorMessage = '';
 
-// 2. Upload Cover
+// 1. Upload Cover
 if (isset($_FILES['foto_buku']) && $_FILES['foto_buku']['error'] === 0) {
     $allowedCover = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-    $fileCover = $_FILES['foto_buku'];
-    
-    // Panggil fungsi helper upload_file (sudah diperbaiki untuk validasi)
-    $uploadCover = upload_file($fileCover, 'covers', $allowedCover);
+    $uploadCover = upload_file($_FILES['foto_buku'], 'covers', $allowedCover);
     
     if ($uploadCover === false) {
         $errorUpload = true;
@@ -38,59 +72,45 @@ if (isset($_FILES['foto_buku']) && $_FILES['foto_buku']['error'] === 0) {
     }
 }
 
-// 3. Upload Preview PDF
+// 2. Upload Preview PDF
 if (!$errorUpload && isset($_FILES['preview_pdf']) && $_FILES['preview_pdf']['error'] === 0) {
     $allowedPreview = ['pdf'];
-    $filePreview = $_FILES['preview_pdf'];
-    
-    $uploadPreview = upload_file($filePreview, 'previews', $allowedPreview);
+    $uploadPreview = upload_file($_FILES['preview_pdf'], 'previews', $allowedPreview);
     
     if ($uploadPreview === false) {
         $errorUpload = true;
         $errorMessage = 'File preview harus PDF atau gagal upload PDF.';
-        
-        // Rollback: Hapus cover yang sudah terupload jika upload PDF gagal
-        if ($uploadCover) {
-            delete_file($uploadCover, 'covers');
-        }
+        if ($uploadCover) delete_file($uploadCover, 'covers');
     }
 }
 
-// Jika terjadi error upload, hentikan proses
 if ($errorUpload) {
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => $errorMessage]);
     exit;
 }
 
+// 3. Ambil dan Siapkan Fields
+$nama_buku = $_POST['nama_buku'] ?? '';
+$nama_penulis = $_POST['nama_penulis'] ?? '';
 
 $fields = [
-    // FIELD WAJIB (dibiarkan string kosong "" agar validasi di bawah menangkapnya)
-    'nama_buku'        => $_POST['nama_buku'] ?? '',
-    'nama_penulis'     => $_POST['nama_penulis'] ?? '',
-
-    // FIELD OPSIONAL: Gunakan null_if_empty()
+    'nama_buku'        => $nama_buku,
+    'nama_penulis'     => $nama_penulis,
     'nama_tata_letak'  => null_if_empty($_POST['nama_tata_letak']),
     'nama_editor'      => null_if_empty($_POST['nama_editor']),
     'isbn'             => null_if_empty($_POST['isbn']),
-    
-    // KRITIS: Numerik (INT/YEAR) dan Harga (Jika kosong, dikirim sebagai NULL)
-    'jumlah_halaman'   => empty($_POST['jumlah_halaman']) ? null : (int)null_if_empty($_POST['jumlah_halaman']), 
-    'harga_buku'       => empty($_POST['harga_buku']) ? null : (int)null_if_empty($_POST['harga_buku']),
-    'tahun_terbit'     => empty($_POST['tahun_terbit']) ? null : (int)null_if_empty($_POST['tahun_terbit']),
-    
-    // Lainnya
+    'jumlah_halaman'   => empty($_POST['jumlah_halaman']) ? null : (int)$_POST['jumlah_halaman'], 
+    'harga_buku'       => empty($_POST['harga_buku']) ? null : (int)$_POST['harga_buku'],
+    'tahun_terbit'     => empty($_POST['tahun_terbit']) ? null : (int)$_POST['tahun_terbit'],
     'ukuran_buku'      => null_if_empty($_POST['ukuran_buku']),
     'deskripsi_buku'   => null_if_empty($_POST['deskripsi_buku']),
-    
-    // File
     'foto_buku'        => $uploadCover, 
     'preview_pdf'      => $uploadPreview, 
 ];
 
-// Validasi Wajib (Wajib diisi)
+// Validasi Wajib
 if (empty($fields['nama_buku']) || empty($fields['nama_penulis'])) {
-    // Rollback: Hapus file yang mungkin sudah terupload
     if ($uploadCover) delete_file($uploadCover, 'covers');
     if ($uploadPreview) delete_file($uploadPreview, 'previews');
     
@@ -99,17 +119,19 @@ if (empty($fields['nama_buku']) || empty($fields['nama_penulis'])) {
     exit;
 }
 
-// -----------------------------------------------------
-// 5. Masukkan data ke Database
-// -----------------------------------------------------
 try {
+    // 4. Generate Slug
+    $slug = generateUniqueBookSlug($pdo, $fields['nama_buku']);
+
+    // 5. Masukkan data ke Database (Termasuk Kolom SLUG)
     $stmt = $pdo->prepare("INSERT INTO books 
-        (nama_buku, nama_penulis, nama_tata_letak, nama_editor, isbn, jumlah_halaman, 
+        (nama_buku, slug, nama_penulis, nama_tata_letak, nama_editor, isbn, jumlah_halaman, 
          ukuran_buku, deskripsi_buku, harga_buku, tahun_terbit, foto_buku, preview_pdf)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)");
 
     $stmt->execute([
         $fields['nama_buku'],
+        $slug, // Insert slug di sini
         $fields['nama_penulis'],
         $fields['nama_tata_letak'],
         $fields['nama_editor'],
@@ -123,21 +145,20 @@ try {
         $fields['preview_pdf']
     ]);
 
-    http_response_code(201); // Created
+    http_response_code(201); 
     echo json_encode([
         'success' => true,
         'message' => 'Buku berhasil ditambahkan',
-        'id' => $pdo->lastInsertId()
+        'id'      => $pdo->lastInsertId(),
+        'slug'    => $slug
     ]);
 
 } catch (Exception $e) {
-    // Rollback: Jika terjadi error database, hapus file yang sudah terupload
     if ($uploadCover) delete_file($uploadCover, 'covers');
     if ($uploadPreview) delete_file($uploadPreview, 'previews');
     
-    http_response_code(500);
-    // Tampilkan pesan error detail di log server
     error_log("Database INSERT Error: " . $e->getMessage()); 
-    echo json_encode(['success' => false, 'message' => 'Terjadi kesalahan database. Detail telah dicatat di log server.']);
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Terjadi kesalahan database.']);
 }
 ?>

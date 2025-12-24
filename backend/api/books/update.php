@@ -26,8 +26,43 @@ if (!$id || !is_numeric($id)) {
     exit;
 }
 
+/**
+ * Generate slug unik untuk tabel books (kecualikan ID buku yang sedang diupdate)
+ */
+function generateUniqueBookSlug($pdo, $title, $currentId = null) {
+    $slug = strtolower($title);
+    $slug = preg_replace('/[^a-z0-9-]+/', '-', $slug);
+    $slug = trim($slug, '-');
+    $slug = $slug ?: 'buku';
+
+    $sql = "SELECT id FROM books WHERE slug = ?";
+    $params = [$slug];
+    if ($currentId !== null) {
+        $sql .= " AND id != ?";
+        $params[] = $currentId;
+    }
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+
+    if ($stmt->rowCount() === 0) {
+        return $slug;
+    }
+
+    $counter = 1;
+    while (true) {
+        $newSlug = $slug . '-' . $counter;
+        $params[0] = $newSlug;
+        $stmt->execute($params);
+        if ($stmt->rowCount() === 0) {
+            return $newSlug;
+        }
+        $counter++;
+    }
+}
+
 try {
-    // 1. Ambil data buku lama (khususnya file)
+    // 1. Ambil data buku lama (untuk handle file lama)
     $stmt = $pdo->prepare("SELECT foto_buku, preview_pdf FROM books WHERE id = ?");
     $stmt->execute([$id]);
     $book = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -38,69 +73,51 @@ try {
         exit;
     }
 
-    // Default: gunakan file lama
-    $foto_buku   = $book['foto_buku'];
-    $preview_pdf = $book['preview_pdf'];
+    $currentCover = $book['foto_buku'];
+    $currentPdf   = $book['preview_pdf'];
 
-    // 2. === UPLOAD COVER BARU (jika ada) ===
+    // 2. === HANDLE UPLOAD COVER BARU ===
     if (isset($_FILES['foto_buku']) && $_FILES['foto_buku']['error'] === UPLOAD_ERR_OK) {
-        // Hapus file lama jika ada
-        if ($foto_buku) {
-            // Asumsi: delete_file(filename, 'directory') berada di includes/functions.php
-            delete_file($foto_buku, 'covers'); 
+        if ($currentCover) {
+            delete_file($currentCover, 'covers'); 
         }
-
         $new_cover = upload_file($_FILES['foto_buku'], 'covers', ['jpg', 'jpeg', 'png', 'webp', 'gif']);
-        if ($new_cover === false) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Cover: Ekstensi tidak diizinkan']);
-            exit;
-        }
-        if ($new_cover === null) {
-            http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Cover: Gagal mengunggah file']);
-            exit;
-        }
-        $foto_buku = $new_cover;
-    }
-    // Jika tidak ada file baru, gunakan nama file lama yang dikirim dari form
-    elseif (!empty($_POST['foto_buku_lama'])) {
-        $foto_buku = $_POST['foto_buku_lama'];
-    } else {
-        // Jika file lama dihapus dari form dan tidak ada file baru
-        $foto_buku = null;
+        if ($new_cover) $currentCover = $new_cover;
+    } 
+    elseif (isset($_POST['hapus_foto']) && $_POST['hapus_foto'] === '1') {
+        if ($currentCover) delete_file($currentCover, 'covers');
+        $currentCover = null;
     }
 
-    // 3. === UPLOAD PREVIEW PDF BARU (jika ada) ===
+    // 3. === HANDLE UPLOAD PREVIEW PDF BARU ===
     if (isset($_FILES['preview_pdf']) && $_FILES['preview_pdf']['error'] === UPLOAD_ERR_OK) {
-        if ($preview_pdf) {
-            delete_file($preview_pdf, 'previews');
+        if ($currentPdf) {
+            delete_file($currentPdf, 'previews');
         }
-
         $new_pdf = upload_file($_FILES['preview_pdf'], 'previews', ['pdf']);
-        if ($new_pdf === false) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'PDF: Hanya file .pdf yang diizinkan']);
-            exit;
-        }
-        if ($new_pdf === null) {
-            http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'PDF: Gagal mengunggah file']);
-            exit;
-        }
-        $preview_pdf = $new_pdf;
+        if ($new_pdf) $currentPdf = $new_pdf;
     }
-    // Jika tidak ada file baru, gunakan nama file lama yang dikirim dari form
-    elseif (!empty($_POST['preview_pdf_lama'])) {
-        $preview_pdf = $_POST['preview_pdf_lama'];
-    } else {
-        $preview_pdf = null;
+    elseif (isset($_POST['hapus_pdf']) && $_POST['hapus_pdf'] === '1') {
+        if ($currentPdf) delete_file($currentPdf, 'previews');
+        $currentPdf = null;
     }
 
+    // 4. === AMBIL DATA FORM & GENERATE SLUG ===
+    $nama_buku = trim($_POST['nama_buku'] ?? '');
+    $nama_penulis = trim($_POST['nama_penulis'] ?? '');
+    
+    if (empty($nama_buku) || empty($nama_penulis)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Nama buku dan penulis wajib diisi']);
+        exit;
+    }
 
-    // 4. === UPDATE DATA KE DATABASE ===
+    $newSlug = generateUniqueBookSlug($pdo, $nama_buku, $id);
+
+    // 5. === UPDATE DATA KE DATABASE ===
     $sql = "UPDATE books SET 
                 nama_buku = ?,
+                slug = ?,
                 nama_penulis = ?,
                 nama_tata_letak = ?,
                 nama_editor = ?,
@@ -116,35 +133,31 @@ try {
 
     $stmt = $pdo->prepare($sql);
     $success = $stmt->execute([
-        $_POST['nama_buku']          ?? '',
-        $_POST['nama_penulis']       ?? '',
-        $_POST['nama_tata_letak']    ?? null,
-        $_POST['nama_editor']        ?? null,
-        $_POST['isbn']               ?? null,
-        // Pastikan nilai null jika string kosong dari frontend
+        $nama_buku,
+        $newSlug,
+        $nama_penulis,
+        $_POST['nama_tata_letak'] ?? null,
+        $_POST['nama_editor']    ?? null,
+        $_POST['isbn']           ?? null,
         empty($_POST['jumlah_halaman']) ? null : $_POST['jumlah_halaman'],
-        $_POST['ukuran_buku']        ?? null,
-        $_POST['deskripsi_buku']     ?? null,
-        // Pastikan nilai null jika string kosong dari frontend
-        empty($_POST['harga_buku']) ? null : $_POST['harga_buku'], 
-        // Pastikan nilai null jika string kosong dari frontend
-        empty($_POST['tahun_terbit']) ? null : $_POST['tahun_terbit'], 
-        $foto_buku,      
-        $preview_pdf,    
+        $_POST['ukuran_buku']    ?? null,
+        $_POST['deskripsi_buku'] ?? null,
+        empty($_POST['harga_buku'])     ? null : $_POST['harga_buku'], 
+        empty($_POST['tahun_terbit'])    ? null : $_POST['tahun_terbit'], 
+        $currentCover,       
+        $currentPdf,    
         $id
     ]);
 
     if ($success) {
         echo json_encode([
             'success' => true,
-            'message' => 'Buku berhasil diperbarui'
+            'message' => 'Buku berhasil diperbarui',
+            'slug'    => $newSlug
         ]);
     } else {
         http_response_code(500);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Gagal menyimpan ke database'
-        ]);
+        echo json_encode(['success' => false, 'message' => 'Gagal menyimpan ke database']);
     }
 
 } catch (Exception $e) {

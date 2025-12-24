@@ -1,8 +1,18 @@
-import React from "react";
+import React, { useEffect } from "react";
+import AOS from "aos";
+import "aos/dist/aos.css";
 
 const Service = () => {
   const primaryColor = "#3d2269";
   const goldColor = "#d3a847";
+
+  // Inisialisasi AOS
+  useEffect(() => {
+    AOS.init({
+      duration: 1000,
+      once: true,
+    });
+  }, []);
 
   const services = [
     {
@@ -35,11 +45,11 @@ const Service = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white pt-32 pb-20 px-6">
+    <div className="min-h-screen bg-white pt-32 pb-20 px-6 overflow-x-hidden">
       <div className="max-w-6xl mx-auto">
         
         {/* HEADER */}
-        <div className="text-center mb-20">
+        <div className="text-center mb-20" data-aos="fade-up">
           <h1 
             className="text-4xl md:text-5xl font-bold mb-6 uppercase"
             style={{ color: primaryColor }}
@@ -60,6 +70,8 @@ const Service = () => {
             {services.slice(0, 4).map((service, index) => (
               <div 
                 key={index}
+                data-aos={index % 2 === 0 ? "fade-right" : "fade-left"}
+                data-aos-delay={index * 100}
                 className="border border-gray-100 rounded-lg p-6 bg-white shadow-sm hover:shadow-md transition-shadow h-full"
               >
                 <div className="flex items-start h-full">
@@ -88,7 +100,7 @@ const Service = () => {
           </div>
           
           {/* SERVICE KE-5 DI TENGAH */}
-          <div className="mt-6 flex justify-center">
+          <div className="mt-6 flex justify-center" data-aos="zoom-in" data-aos-delay="400">
             <div className="border border-gray-100 rounded-lg p-6 md:p-8 bg-white shadow-sm hover:shadow-md transition-shadow max-w-2xl w-full">
               <div className="flex items-start">
                 <div 
@@ -113,27 +125,29 @@ const Service = () => {
           </div>
         </div>
 
-        {/* PACKAGE IMAGES - SEKARANG 1 BARIS 2 GAMBAR */}
+        {/* PACKAGE IMAGES */}
         <div className="mb-20">
           <h2 
             className="text-3xl font-bold text-center mb-12"
             style={{ color: primaryColor }}
+            data-aos="fade-up"
           >
             Paket Layanan Kami
           </h2>
           
-          {/* PERUBAHAN DI SINI: Menggunakan grid-cols-2 pada md keatas */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
             {packageImages.map((image, index) => (
               <div 
                 key={index}
-                className="border border-gray-100 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow"
+                data-aos="zoom-in-up"
+                data-aos-delay={index * 150}
+                className="border border-gray-100 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow group"
               >
-                <div className="bg-gray-50 flex items-center justify-center p-4 md:p-6">
+                <div className="bg-gray-50 flex items-center justify-center p-4 md:p-6 overflow-hidden">
                   <img
                     src={image.src}
                     alt={image.alt}
-                    className="w-full h-auto object-contain rounded-lg"
+                    className="w-full h-auto object-contain rounded-lg transition-transform duration-500 group-hover:scale-110"
                     style={{ maxHeight: "400px" }}
                     onError={(e) => {
                       e.target.src = `https://via.placeholder.com/600x400/EDE9FE/${primaryColor.replace('#', '')}?text=Paket+Layanan+${index + 1}`;
@@ -146,7 +160,7 @@ const Service = () => {
         </div>
 
         {/* CTA */}
-        <div className="mt-20 text-center">
+        <div className="mt-20 text-center" data-aos="flip-up">
           <p className="text-lg text-gray-600 mb-6 font-medium">
             Siap mewujudkan karya Anda?
           </p>

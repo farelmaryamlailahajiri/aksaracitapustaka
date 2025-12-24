@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { FiShoppingCart, FiBookOpen, FiSearch } from "react-icons/fi";
+import AOS from "aos";
+import "aos/dist/aos.css";
 
 const primaryColor = "#3d2269";
 const goldColor = "#d3a847";
@@ -13,6 +15,14 @@ const Product = () => {
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
+
+  // Inisialisasi AOS
+  useEffect(() => {
+    AOS.init({
+      duration: 1000,
+      once: true,
+    });
+  }, []);
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -64,10 +74,11 @@ const Product = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white pt-32 pb-20 px-6">
+    <div className="min-h-screen bg-white pt-32 pb-20 px-6 overflow-x-hidden">
       <div className="max-w-7xl mx-auto">
+        
         {/* Header Section */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-16" data-aos="fade-up">
           <h1
             className="text-4xl md:text-5xl font-bold mb-4 uppercase"
             style={{ color: primaryColor }}
@@ -81,7 +92,7 @@ const Product = () => {
         </div>
 
         {/* Search Bar */}
-        <div className="mb-12 flex justify-center">
+        <div className="mb-12 flex justify-center" data-aos="fade-up" data-aos-delay="200">
           <div className="relative w-full max-w-xl">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <FiSearch className="text-gray-400" size={20} />
@@ -99,23 +110,25 @@ const Product = () => {
 
         {/* Error Handling */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg mb-8 text-center">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg mb-8 text-center" data-aos="shake">
             {error}
           </div>
         )}
 
-        {/* Grid System - Responsif 2 kolom di HP, 4 kolom di Laptop */}
+        {/* Grid System */}
         {filteredBooks.length === 0 && !error ? (
-          <div className="text-center py-20">
+          <div className="text-center py-20" data-aos="zoom-in">
              <FiBookOpen size={48} className="mx-auto mb-4 opacity-20" style={{ color: primaryColor }} />
              <h3 className="text-xl font-medium text-gray-700">Buku tidak ditemukan</h3>
           </div>
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
-            {filteredBooks.map((book) => (
+            {filteredBooks.map((book, index) => (
               <div
                 key={book.id}
-                onClick={() => navigate(`/product/${book.id}`)}
+               onClick={() => navigate(`/product/${book.slug || book.id}`)}
+                data-aos="fade-up"
+                data-aos-delay={index * 50} // Staggered animation
                 className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-xl transition-all duration-300 group border cursor-pointer flex flex-col h-full"
                 style={{ borderColor: primaryColor + "15" }}
               >
@@ -125,7 +138,7 @@ const Product = () => {
                     <img
                       src={`/file.php?t=covers&f=${book.foto_buku}`}
                       alt={book.nama_buku}
-                      className="max-w-full max-h-full object-contain shadow-md group-hover:scale-105 transition-transform duration-500"
+                      className="max-w-full max-h-full object-contain shadow-md group-hover:scale-110 transition-transform duration-700"
                     />
                   ) : (
                     <div className="flex flex-col items-center opacity-20 text-gray-400">
@@ -137,7 +150,7 @@ const Product = () => {
                   {/* Price Tag Badge */}
                   {book.harga_buku && (
                     <div
-                      className="absolute top-2 right-2 text-white px-2 py-1 rounded-md text-[10px] md:text-xs font-bold shadow-lg"
+                      className="absolute top-2 right-2 text-white px-2 py-1 rounded-md text-[10px] md:text-xs font-bold shadow-lg transform translate-x-1 group-hover:translate-x-0 transition-transform"
                       style={{ backgroundColor: goldColor }}
                     >
                       Rp {Number(book.harga_buku).toLocaleString("id-ID")}
@@ -172,7 +185,7 @@ const Product = () => {
                       href="https://id.shp.ee/gJ84wYK"
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()} // Supaya tidak memicu navigasi ke halaman detail
+                      onClick={(e) => e.stopPropagation()} 
                       className="p-2 rounded-lg text-white hover:scale-110 transition-transform shadow-sm"
                       style={{ backgroundColor: goldColor }}
                       title="Beli di Shopee"
@@ -186,9 +199,9 @@ const Product = () => {
           </div>
         )}
 
-        {/* Result Counter (Hanya muncul jika sedang mencari) */}
+        {/* Result Counter */}
         {searchTerm && filteredBooks.length > 0 && (
-          <div className="mt-12 text-center text-gray-400 text-xs italic">
+          <div className="mt-12 text-center text-gray-400 text-xs italic" data-aos="fade-in">
             Menampilkan {filteredBooks.length} hasil untuk "{searchTerm}"
           </div>
         )}

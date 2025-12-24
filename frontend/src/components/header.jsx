@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Lock, Menu, X } from 'lucide-react'; // Menggunakan Lucide untuk semua icon
+import { Lock, Menu, X } from 'lucide-react'; 
 import LoginModal from './LoginModal';
 
 const navLinks = [
@@ -21,6 +21,11 @@ const Header = () => {
 
   const isActive = (path) => location.pathname === path;
 
+  // Fungsi navigasi ke atas
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const openLogin = () => {
     setIsLoginModalOpen(true);
     setIsOpen(false);
@@ -32,9 +37,9 @@ const Header = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
 
-            {/* Logo */}
+            {/* Logo - Tambahkan scrollToTop di sini juga */}
             <div className="flex-shrink-0">
-              <Link to="/" className="flex items-center space-x-3">
+              <Link to="/" onClick={scrollToTop} className="flex items-center space-x-3">
                 <img className="h-10 w-auto" src="/assets/logo.webp" alt="Aksara Cita Pustaka" />
               </Link>
             </div>
@@ -47,6 +52,7 @@ const Header = () => {
                   <Link
                     key={link.name}
                     to={link.to}
+                    onClick={scrollToTop} // Perbaikan di sini
                     className="font-poppins text-sm lg:text-base font-bold uppercase tracking-wider pb-1 border-b-2 transition-all duration-200"
                     style={{
                       color: active ? activeLinkColor : primaryColor,
@@ -58,7 +64,6 @@ const Header = () => {
                 );
               })}
 
-              {/* Desktop Login Button - Menggunakan Lucide Lock */}
               <button
                 onClick={openLogin}
                 className="ml-4 p-2.5 rounded-xl text-white transition-all duration-300 hover:scale-110 active:scale-95 shadow-md hover:shadow-purple-200"
@@ -90,7 +95,10 @@ const Header = () => {
                   <Link
                     key={link.name}
                     to={link.to}
-                    onClick={() => setIsOpen(false)}
+                    onClick={() => {
+                      setIsOpen(false);
+                      scrollToTop(); // Perbaikan di sini
+                    }}
                     className="block py-3 text-lg font-bold uppercase rounded-xl px-4 transition-all"
                     style={{
                       color: active ? activeLinkColor : primaryColor,
@@ -115,7 +123,6 @@ const Header = () => {
         )}
       </header>
 
-      {/* Global Login Modal */}
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
