@@ -18,7 +18,7 @@ const ReviewSection = () => {
   }, []);
 
   // Satu sumber video terpilih
-  const videoSrc = "https://www.youtube.com/embed/0Wx-5rTSUHE";
+  const videoSrc = "https://www.youtube.com/embed/CQol74TelxU";
 
   return (
     <section
